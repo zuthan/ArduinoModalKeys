@@ -152,16 +152,24 @@ void loop()
 // *******************************************************************************************
 // Shared Function Implementations
 // *******************************************************************************************
+bool operator==(const RichKey& lhs, const RichKey& rhs)
+{
+    return lhs.mods == rhs.mods && lhs.key == rhs.key;
+}
 
 void Log(String text){
     Serial.println(text);
 }
 
-void PressAndReleaseKey(RichKey key){
+void PressKey(RichKey key){
     uint8_t buf[8];
     CopyBuf(OutputBuffer, buf);
     MergeKeyIntoBuffer(key, buf);
     SendState(buf);
     delay(1);
+}
+
+void PressAndReleaseKey(RichKey key){
+    PressKey(key);
     SendState(OutputBuffer);
 }

@@ -1,8 +1,8 @@
 #include "keymap.h"
 
-// *******************************************************************************************
+// ****************************************************************************
 // Type Declarations
-// *******************************************************************************************
+// ****************************************************************************
 
 // Keyboard Layouts
 typedef enum {
@@ -17,31 +17,35 @@ typedef enum
     NoKeys = 0,
     Normal,
     RemnantKeys,
+    LeftAlt,
     LeftFunc,
     LeftMod,
+    RightAlt,
     RightFunc,
     RightMod,
     Tilde,
     AltTab,
 } Mode;
 
-// *******************************************************************************************
+// ****************************************************************************
 // Function Declarations
-// *******************************************************************************************
+// ****************************************************************************
 
 RichKey DoNothing_keymap(uint8_t *buf, uint8_t i);
 RichKey Normal_keymap(uint8_t *buf, uint8_t i);
 RichKey FirstKeypress_keymap(uint8_t *buf, uint8_t i);
+RichKey LeftAltMode_keymap(uint8_t *buf, uint8_t i);
 RichKey LeftFuncMode_keymap(uint8_t *buf, uint8_t i);
 RichKey LeftModMode_keymap(uint8_t *buf, uint8_t i);
+RichKey RightAltMode_keymap(uint8_t *buf, uint8_t i);
 RichKey RightFuncMode_keymap(uint8_t *buf, uint8_t i);
 RichKey RightModMode_keymap(uint8_t *buf, uint8_t i);
 RichKey Tilde_keymap(uint8_t *buf, uint8_t i);
 RichKey AltTab_keymap(uint8_t *buf, uint8_t i);
 
-// *******************************************************************************************
+// ****************************************************************************
 // Constants
-// *******************************************************************************************
+// ****************************************************************************
 
 const RichKey NoKey = { 0, 0 };
 
@@ -62,8 +66,10 @@ const KeyMap KeyMaps[] = {
     &FirstKeypress_keymap, /* NoKeys */
     &Normal_keymap,        /* Normal */
     &DoNothing_keymap,     /* RemnantKeys */
+    &LeftAltMode_keymap,   /* LeftAlt */
     &LeftFuncMode_keymap,  /* LeftFunc */
     &LeftModMode_keymap,   /* LeftMod */
+    &RightAltMode_keymap,  /* RightAlt */
     &RightFuncMode_keymap, /* RightFunc */
     &RightModMode_keymap,  /* RightMod */
     &Tilde_keymap,         /* Tilde */
@@ -71,16 +77,16 @@ const KeyMap KeyMaps[] = {
 };
 
 
-// *******************************************************************************************
+// ****************************************************************************
 // Variables
-// *******************************************************************************************
+// ****************************************************************************
 
 KeyboardLayout CurrentLayout = dvorak;
 Mode CurrentMode = NoKeys;
 
-// *******************************************************************************************
+// ****************************************************************************
 // Helper Functions
-// *******************************************************************************************
+// ****************************************************************************
 
 bool numKeysPressed(uint8_t *buf){
     uint8_t count = 0;
@@ -100,10 +106,10 @@ bool numKeysOrModsPressed(uint8_t *buf){
     return numModsPressed(buf) + numKeysPressed(buf);
 }
 
-RichKey AltTabKey(uint8_t *buf){
+RichKey AltTabKey(uint8_t *buf, uint8_t altKey){
     if (numKeysPressed(buf) == 1){
         CurrentMode = AltTab;
-        return (RichKey){ LAlt, _Tab };
+        return (RichKey){ altKey, _Tab };
     } else return (RichKey){ 0, _Tab };
 }
 bool mapModifier(uint8_t mod, Mode newMode, RichKey* out){
@@ -117,12 +123,15 @@ String GetModeString(){
         case NoKeys:      return "NoKeys";
         case Normal:      return "Normal";
         case RemnantKeys: return "RemnantKeys";
+        case LeftAlt:     return "LeftAlt";
         case LeftFunc:    return "LeftFunc";
         case LeftMod:     return "LeftMod";
+        case RightAlt:    return "RightAlt";
         case RightFunc:   return "RightFunc";
         case RightMod:    return "RightMod";
         case Tilde:       return "Tilde";
         case AltTab:      return "AltTab";
+        default:          return "<unknown>";
     }
 }
 String GetLayoutString(){
@@ -133,17 +142,16 @@ String GetLayoutString(){
     }
 }
 
-// *******************************************************************************************
+// ****************************************************************************
 // Mode implementations
-// *******************************************************************************************
+// ****************************************************************************
 
 // a keymap that always does nothing
 RichKey DoNothing_keymap(uint8_t *buf, uint8_t i){
     return NoKey;
 }
 
-// the keymap that just maps the key to the current keyboard layout
-RichKey Normal_keymap(uint8_t *buf, uint8_t i){
+RichKey mapNormalKeyToCurrentLayout(uint8_t *buf, uint8_t i){
     // map modifier
     if (i == 0){
         return (RichKey){ buf[0], 0 };
@@ -161,17 +169,23 @@ RichKey Normal_keymap(uint8_t *buf, uint8_t i){
         }
 
         return (RichKey){ 0, inkey };
-    }
+    }    
+}
+
+// the keymap that just maps the key to the current keyboard layout
+RichKey Normal_keymap(uint8_t *buf, uint8_t i){
+    CurrentMode = Normal;
+    return mapNormalKeyToCurrentLayout(buf, i);
 }
 
 RichKey FirstKeypress_keymap(uint8_t *buf, uint8_t i){
     // map modifier
     if (i == 0) switch (buf[0]){
         case LAlt:
-            CurrentMode = LeftFunc;
+            CurrentMode = LeftAlt;
             return NoKey;
         case RAlt:
-            CurrentMode = RightFunc;
+            CurrentMode = RightAlt;
             return NoKey;
     } 
     // map key
@@ -180,8 +194,6 @@ RichKey FirstKeypress_keymap(uint8_t *buf, uint8_t i){
             CurrentMode = Tilde;
             return NoKey;
     }
-
-    CurrentMode = Normal;
     return Normal_keymap(buf, i);
 }
 
@@ -202,18 +214,40 @@ bool mapLAltModifier(uint8_t key, RichKey* out){
     return false;
 }
 
+RichKey LeftAltMode_keymap(uint8_t *buf, uint8_t i){
+    CurrentMode = LeftAlt;
+    RichKey funcKey = LeftFuncMode_keymap(buf, 2);
+    // map modifier
+    if (i == 0) switch (buf[0]){
+        case LAlt:
+            if (numKeysPressed(buf) == 0)
+                return NoKey;
+            else if (funcKey == NoKey){ // a non-func-mode key was pressed first
+                // press Alt key slightly earlier than other keys
+                PressKey((RichKey){ LAlt, 0 });
+            }
+
+    }
+    if (funcKey == NoKey) // a non-func-mode key was pressed first
+        return Normal_keymap(buf, i);
+    else
+        return LeftFuncMode_keymap(buf, i);
+}
+
 RichKey LeftFuncMode_keymap(uint8_t *buf, uint8_t i){
+    CurrentMode = LeftFunc;
     RichKey out;
     // map modifier
-    if (i == 0) {
-        return (RichKey){ buf[0] & ~LAlt, 0 };
+    if (i == 0) switch (buf[0]){
+        case LAlt:
+            return NoKey;
     } 
     // map key
     else if (mapLAltModifier(buf[i], &out))
         return out;
     else switch (buf[i]){
         // AltTab
-        case _Tab:           return AltTabKey(buf);
+        case _Tab:           return AltTabKey(buf, LAlt);
         case _Y:             return (RichKey){ 0, _Escape };
         case _U:             return (RichKey){ 0, _Home };
         case _I:             return (RichKey){ 0, _PgUp };
@@ -221,7 +255,7 @@ RichKey LeftFuncMode_keymap(uint8_t *buf, uint8_t i){
         case _P:             return (RichKey){ 0, _End };
         case _LeftBracket:   return (RichKey){ 0, _Enter };
         case _RightBracket:  return (RichKey){ 0, _Menu };
-        case _Backslash:     return AltTabKey(buf);
+        case _Backslash:     return AltTabKey(buf, LAlt);
         case _Backspace:     return (RichKey){ 0, _CapsLock };
         case _H:             return (RichKey){ 0, _Backspace };
         case _J:             return (RichKey){ 0, _Left };
@@ -229,9 +263,6 @@ RichKey LeftFuncMode_keymap(uint8_t *buf, uint8_t i){
         case _L:             return (RichKey){ 0, _Down };
         case _Semicolon:     return (RichKey){ 0, _Right };
         case _Apostrophe:    return (RichKey){ 0, _Delete };
-        case _Enter:
-            CurrentMode = RemnantKeys;
-            return (RichKey){ LAlt,  _Enter };
         case _7:             return (RichKey){ 0, _F7 };
         case _8:             return (RichKey){ 0, _F8 };
         case _9:             return (RichKey){ 0, _F9 };
@@ -239,10 +270,11 @@ RichKey LeftFuncMode_keymap(uint8_t *buf, uint8_t i){
         case _Dash:          return (RichKey){ 0, _F11 };
         case _Equals:        return (RichKey){ 0, _F12 };
     }
-    return Normal_keymap(buf, i);
+    return NoKey;
 }
 
 RichKey LeftModMode_keymap(uint8_t *buf, uint8_t i){
+    CurrentMode = LeftMod;
     RichKey out;
     // map modifier
     if (i == 0) switch (buf[0]){
@@ -254,7 +286,7 @@ RichKey LeftModMode_keymap(uint8_t *buf, uint8_t i){
     // map key
     else if (mapLAltModifier(buf[i], &out))
         return out;
-    return Normal_keymap(buf, i);
+    return mapNormalKeyToCurrentLayout(buf, i);
 }
 
 bool mapRAltModifier(uint8_t key, RichKey* out){
@@ -274,19 +306,40 @@ bool mapRAltModifier(uint8_t key, RichKey* out){
     return false;
 }
 
+RichKey RightAltMode_keymap(uint8_t *buf, uint8_t i){
+    CurrentMode = RightAlt;
+    RichKey funcKey = RightFuncMode_keymap(buf, 2);
+    // map modifier
+    if (i == 0) switch (buf[0]){
+        case RAlt:
+            if (numKeysPressed(buf) == 0)
+                return NoKey;
+            else if (funcKey == NoKey){ // a non-func-mode key was pressed first
+                // press Alt key slightly earlier than other keys
+                PressKey((RichKey){ RAlt, 0 });
+            }
+    }
+    if (funcKey == NoKey) // a non-func-mode key was pressed first
+        return Normal_keymap(buf, i);
+    else
+        return RightFuncMode_keymap(buf, i);
+}
+
 RichKey RightFuncMode_keymap(uint8_t *buf, uint8_t i){
+    CurrentMode = RightFunc;
     RichKey out;
     // map modifier
-    if (i == 0) {
-        return (RichKey){ buf[0] & ~RAlt, 0 };
+    if (i == 0) switch (buf[0]){
+        case RAlt:
+            return NoKey;
     }     
     // map key
     else if (mapRAltModifier(buf[i], &out))
         return out;
     else switch (buf[i]){
         // AltTab
-        case _Tab:           return AltTabKey(buf);
-        case _Backslash:     return AltTabKey(buf);
+        case _Tab:           return AltTabKey(buf, RAlt);
+        case _Backslash:     return AltTabKey(buf, RAlt);
         case _1:             return (RichKey){ 0, _F1 };
         case _2:             return (RichKey){ 0, _F2 };
         case _3:             return (RichKey){ 0, _F3 };
@@ -294,10 +347,11 @@ RichKey RightFuncMode_keymap(uint8_t *buf, uint8_t i){
         case _5:             return (RichKey){ 0, _F5 };
         case _6:             return (RichKey){ 0, _F6 };        
     }
-    return Normal_keymap(buf, i);
+    return NoKey;
 }
 
 RichKey RightModMode_keymap(uint8_t *buf, uint8_t i){
+    CurrentMode = RightMod;
     RichKey out;
     // map modifier
     if (i == 0) switch (buf[0]){
@@ -309,10 +363,11 @@ RichKey RightModMode_keymap(uint8_t *buf, uint8_t i){
     // map key
     else if (mapRAltModifier(buf[i], &out))
         return out;
-    return Normal_keymap(buf, i);
+    return mapNormalKeyToCurrentLayout(buf, i);
 }
 
 RichKey Tilde_keymap(uint8_t *buf, uint8_t i){
+    CurrentMode = Tilde;
      // map modifier
     if (i >= 2) switch (buf[i]){
         case _1:
@@ -332,6 +387,7 @@ RichKey Tilde_keymap(uint8_t *buf, uint8_t i){
 }
 
 RichKey AltTab_keymap(uint8_t *buf, uint8_t i){
+    CurrentMode = AltTab;
     // map modifier
     if (i == 0) {
         return (RichKey){ buf[0] & (LAlt | RAlt | LShift | RShift), 0 };
@@ -350,16 +406,22 @@ RichKey AltTab_keymap(uint8_t *buf, uint8_t i){
     return NoKey;
 }
 
-// *******************************************************************************************
+// ****************************************************************************
 // Shared Function Implementations
-// *******************************************************************************************
+// ****************************************************************************
 
 void OnKeyboardEvent(uint8_t *prev_buf, uint8_t *cur_buf){
     // last key released
     if (numKeysOrModsPressed(cur_buf) == 0){
         switch (CurrentMode){
             case Tilde: // send backtick on release if special function wasn't used
-                PressAndReleaseKey((RichKey){ 0, _Backtick} );
+                PressAndReleaseKey((RichKey){ 0, _Backtick } );
+                break;
+            case LeftAlt:
+                PressAndReleaseKey((RichKey){ LAlt, 0 } );
+                break;
+            case RightAlt:
+                PressAndReleaseKey((RichKey){ RAlt, 0 } );
                 break;
         }
         CurrentMode = NoKeys;
