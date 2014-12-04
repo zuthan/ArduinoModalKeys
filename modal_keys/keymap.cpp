@@ -24,6 +24,7 @@ typedef enum
     RightFunc,
     RightMod,
     AltTab,
+    CtrlAltNumPad,
     Configuration,
     CapsLockSet,
 } Mode;
@@ -42,6 +43,7 @@ RichKey RightAltMode_keymap(uint8_t *buf, uint8_t i);
 RichKey RightFuncMode_keymap(uint8_t *buf, uint8_t i);
 RichKey RightModMode_keymap(uint8_t *buf, uint8_t i);
 RichKey AltTab_keymap(uint8_t *buf, uint8_t i);
+RichKey CtrlAltNumPad_keymap(uint8_t *buf, uint8_t i);
 RichKey Configuration_keymap(uint8_t *buf, uint8_t i);
 RichKey CapsLockSet_keymap(uint8_t *buf, uint8_t i);
 
@@ -75,6 +77,7 @@ const KeyMap KeyMaps[] = {
     &RightFuncMode_keymap,      /* RightFunc */
     &RightModMode_keymap,       /* RightMod */
     &AltTab_keymap,             /* AltTab */
+    &CtrlAltNumPad_keymap,      /* CtrlAltNumPad */
     &Configuration_keymap,      /* Configuration */
     &CapsLockSet_keymap         /* CapsLockSet */
 };
@@ -134,6 +137,7 @@ String GetModeString(){
         case RightFunc:       return "RightFunc";
         case RightMod:        return "RightMod";
         case AltTab:          return "AltTab";
+        case CtrlAltNumPad:   return "CtrlAltNumPad";
         case Configuration:   return "Configuration";
         case CapsLockSet:     return "CapsLockSet";
         default:              return "<unknown>";
@@ -231,8 +235,12 @@ RichKey LeftAltMode_keymap(uint8_t *buf, uint8_t i){
                 // press Alt key slightly earlier than other keys
                 PressKey((RichKey){ LAlt, 0 });
             }
-
+    } 
+    // map key
+    else switch (buf[i]){
+        case _C:           return CtrlAltNumPad_keymap(buf, i);
     }
+
     if (funcKey == NoKey) // a non-func-mode key was pressed first
         return Normal_keymap(buf, i);
     else
@@ -253,6 +261,8 @@ RichKey LeftFuncMode_keymap(uint8_t *buf, uint8_t i){
     else switch (buf[i]){
         // AltTab
         case _Tab:           return AltTabKey(buf, LAlt);
+        // Activate WinSplit navigation mode
+        case _C:             return CtrlAltNumPad_keymap(buf, i);
         case _Y:             return (RichKey){ 0, _Escape };
         case _U:             return (RichKey){ 0, _Home };
         case _I:             return (RichKey){ 0, _PgUp };
@@ -387,6 +397,34 @@ RichKey AltTab_keymap(uint8_t *buf, uint8_t i){
             return (RichKey){ LShift, 0 };
         case _P:
             return (RichKey){ RShift, 0 };
+    }
+    return NoKey;
+}
+
+RichKey CtrlAltNumPad_keymap(uint8_t *buf, uint8_t i){
+    CurrentMode = CtrlAltNumPad;
+    // map modifier
+    if (i == 0) {
+        return NoKey;
+    } 
+    // map key
+    else switch (buf[i]){
+        case _C:                    return (RichKey){ LCtrl | LAlt, 0 };
+        case _U:                    return (RichKey){ 0, _Numpad7 };
+        case _I:                    return (RichKey){ 0, _Numpad8 };
+        case _O:                    return (RichKey){ 0, _Numpad9 };
+        case _P:                    return (RichKey){ 0, _Numpad9 };
+        case _H:                    return (RichKey){ 0, _PgUp };
+        case _J:                    return (RichKey){ 0, _Numpad4 };
+        case _K:                    return (RichKey){ 0, _Numpad5 };
+        case _L:                    return (RichKey){ 0, _Numpad6 };
+        case _Semicolon:            return (RichKey){ 0, _Numpad6 };
+        case _Apostrophe:           return (RichKey){ 0, _PgDn };
+        case _N:                    return (RichKey){ 0, _Numpad1 };
+        case _M:                    return (RichKey){ 0, _Numpad1 };
+        case _Comma:                return (RichKey){ 0, _Numpad2 };
+        case _Fullstop:             return (RichKey){ 0, _Numpad3 };
+        case _ForwardSlash:         return (RichKey){ 0, _Numpad3 };   
     }
     return NoKey;
 }
