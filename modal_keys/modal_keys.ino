@@ -92,15 +92,15 @@ void PrintState(uint8_t *buf)
     *((uint8_t*)&mod) = buf[0];
     Serial.print(GetStateString());
     Serial.print("<");
-    Serial.print((mod.bmLeftCtrl   == 1) ? "C" : " ");
-    Serial.print((mod.bmLeftShift  == 1) ? "S" : " ");
-    Serial.print((mod.bmLeftAlt    == 1) ? "A" : " ");
-    Serial.print((mod.bmLeftGUI    == 1) ? "G" : " ");
+    Serial.print((mod.bmLeftCtrl   == 1) ? "C" : "-");
+    Serial.print((mod.bmLeftShift  == 1) ? "S" : "-");
+    Serial.print((mod.bmLeftAlt    == 1) ? "A" : "-");
+    Serial.print((mod.bmLeftGUI    == 1) ? "G" : "-");
     Serial.print(".");
-    Serial.print((mod.bmRightCtrl   == 1) ? "C" : " ");
-    Serial.print((mod.bmRightShift  == 1) ? "S" : " ");
-    Serial.print((mod.bmRightAlt    == 1) ? "A" : " ");
-    Serial.print((mod.bmRightGUI    == 1) ? "G" : " ");
+    Serial.print((mod.bmRightCtrl   == 1) ? "C" : "-");
+    Serial.print((mod.bmRightShift  == 1) ? "S" : "-");
+    Serial.print((mod.bmRightAlt    == 1) ? "A" : "-");
+    Serial.print((mod.bmRightGUI    == 1) ? "G" : "-");
     Serial.print(">");
     for (uint8_t i = 2; i < 8; i++) {
         Serial.print(" ");
