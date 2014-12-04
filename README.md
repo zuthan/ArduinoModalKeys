@@ -26,6 +26,8 @@ into sets of (Shift, Alt, Ctrl, Gui/Super/Command/Win) modifiers, each of which 
 * In the Arduino IDE, select the Board type to be Leonardo: Tools -> Board
 * Check that the Arduino Leonardo is connected. If it is, there should be an entry under the Tools -> Serial Port menu. If it isn't, Google is your friend :-)
 * Upload the sketch to your device: File -> Upload
+* Unplug your Arduino device
 * Connect the USB Host Shield to the Arduino Leonardo
 * Plug your USB keyboard into the USB port on the USB Host Shield
+* Plug the Arduino back into the computer
 * Keystrokes typed into this keyboard should now be sent to your computer through the Arduino Leonardo
