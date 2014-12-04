@@ -21,7 +21,8 @@ into sets of (Shift, Alt, Ctrl, Gui/Super/Command/Win) modifiers, each of which 
 ## Setup Instructions
 * Connect your Arduino Leonardo to your computer via the micro USB cable
 * Open modal_keys/modal_keys.ino in the Arduino IDE
-* Download the USB Host Shield library into <Arduino Sketchbook location>/library. Arduino Sketchbook location is specified in File -> Preferences.
+* Download the USB Host Shield library into \<Arduino Sketchbook location\>/library. Arduino Sketchbook location is specified in File -> Preferences.
+* Restart Arduino IDE
 * In the Arduino IDE, select the Board type to be Leonardo: Tools -> Board
 * Check that the Arduino Leonardo is connected. If it is, there should be an entry under the Tools -> Serial Port menu. If it isn't, Google is your friend :-)
 * Upload the sketch to your device: File -> Upload
