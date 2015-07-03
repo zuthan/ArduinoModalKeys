@@ -38,7 +38,8 @@ protected:
 // Variables
 // *******************************************************************************************
 
-bool Debug = false;
+bool WriteToLog = true;
+bool SendOutput = true;
 
 USB Usb;
 HIDBoot<HID_PROTOCOL_KEYBOARD> HidKeyboard(&Usb);
@@ -62,6 +63,8 @@ void KbdRptParser::Parse(HID *hid, bool is_rpt_id, uint8_t len, uint8_t *buf) {
 
     CopyBuf(buf, prevState.bInfo);
     CopyBuf(outbuf, OutputBuffer);
+    if (WriteToLog)
+        PrintState(buf, outbuf);
     SendState(outbuf);
 };
 
@@ -80,22 +83,14 @@ void MergeKeyIntoBuffer(RichKey key, uint8_t *buf){
     }
 }
 
-void SendState(uint8_t *buf)
-{
-    #ifndef LEONARDO
-    if (Debug)
-    #endif
-    PrintState(buf);
-
-    if (!Debug)
+void SendState(uint8_t *buf){
+    if (SendOutput)
         SendKeysToHost(buf);
 }
 
-void PrintState(uint8_t *buf)
-{
+void PrintKeyState(uint8_t *buf){
     MODIFIERKEYS mod;
     *((uint8_t*)&mod) = buf[0];
-    Serial.print(GetStateString());
     Serial.print("<");
     Serial.print((mod.bmLeftCtrl   == 1) ? "C" : "-");
     Serial.print((mod.bmLeftShift  == 1) ? "S" : "-");
@@ -115,6 +110,13 @@ void PrintState(uint8_t *buf)
         else
             Serial.print("__");
     }
+}
+
+void PrintState(uint8_t *inBuf, uint8_t *outBuf){
+    Serial.print(GetStateString());
+    PrintKeyState(inBuf);
+    Serial.print("  ==>  ");
+    PrintKeyState(outBuf);
     Serial.println();
 }
 
@@ -141,7 +143,7 @@ void setup()
 {
     Serial.begin( 115200 );
 
-    if (Usb.Init() == -1 && Debug)
+    if (Usb.Init() == -1 && WriteToLog)
         Serial.println("OSC did not start.");
 
     delay( 200 );
