@@ -1,6 +1,8 @@
 #if !defined(__KEYMAP_H_)
 #define __KEYMAP_H_
 
+// https://www.win.tue.nl/~aeb/linux/kbd/scancodes-14.html
+
 // Modifier flags
 #define LCtrl   (1 << 0)
 #define LShift  (1 << 1)
@@ -92,7 +94,7 @@
 #define _Down 81
 #define _Up 82
 #define _NumLock 83
-#define _NumpadBackslash 84
+#define _NumpadDivide 84
 #define _NumpadTimes 85
 #define _NumpadMinus 86
 #define _NumpadPlus 87
