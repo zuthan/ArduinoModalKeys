@@ -5,6 +5,11 @@
 #include <hidboot.h>
 #include "keymap.h"
 
+// Satisfy the IDE, which needs to see the include statment in the ino too.
+#ifdef dobogusinclude
+#include <spi4teensy3.h>
+#include <SPI.h>
+#endif
 
 // *******************************************************************************************
 // Function Declarations
@@ -79,9 +84,9 @@ void SendState(uint8_t *buf)
 {
     #ifndef LEONARDO
     if (Debug)
-    #endif 
+    #endif
     PrintState(buf);
-    
+
     if (!Debug)
         SendKeysToHost(buf);
 }
