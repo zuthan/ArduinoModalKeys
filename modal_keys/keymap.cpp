@@ -6,7 +6,7 @@
 
 // Keyboard Layouts
 typedef enum {
-    qwerty = 0, 
+    qwerty = 0,
     dvorak,
     colemak
 } KeyboardLayout;
@@ -24,7 +24,8 @@ typedef enum
     RightFunc,
     RightMod,
     AltTab,
-    CtrlAltNumPad,
+    CtrlWin,
+    NumPad,
     Configuration,
     CapsLockSet,
 } Mode;
@@ -33,9 +34,14 @@ typedef enum
 // Function Declarations
 // ****************************************************************************
 
+// pure functions
+RichKey mapLeftFuncKey(uint8_t *buf, uint8_t i);
+RichKey mapRightFuncKey(uint8_t *buf, uint8_t i);
+
+// state changing methods
 RichKey DoNothing_keymap(uint8_t *buf, uint8_t i);
 RichKey Normal_keymap(uint8_t *buf, uint8_t i);
-RichKey FirstKeypress_keymap(uint8_t *buf, uint8_t i);
+RichKey EntryPoint_keymap(uint8_t *buf, uint8_t i);
 RichKey LeftAltMode_keymap(uint8_t *buf, uint8_t i);
 RichKey LeftFuncMode_keymap(uint8_t *buf, uint8_t i);
 RichKey LeftModMode_keymap(uint8_t *buf, uint8_t i);
@@ -43,7 +49,8 @@ RichKey RightAltMode_keymap(uint8_t *buf, uint8_t i);
 RichKey RightFuncMode_keymap(uint8_t *buf, uint8_t i);
 RichKey RightModMode_keymap(uint8_t *buf, uint8_t i);
 RichKey AltTab_keymap(uint8_t *buf, uint8_t i);
-RichKey CtrlAltNumPad_keymap(uint8_t *buf, uint8_t i);
+RichKey CtrlWin_keymap(uint8_t *buf, uint8_t i);
+RichKey NumPad_keymap(uint8_t *buf, uint8_t i);
 RichKey Configuration_keymap(uint8_t *buf, uint8_t i);
 RichKey CapsLockSet_keymap(uint8_t *buf, uint8_t i);
 
@@ -51,7 +58,8 @@ RichKey CapsLockSet_keymap(uint8_t *buf, uint8_t i);
 // Constants
 // ****************************************************************************
 
-const RichKey NoKey = { 0, 0 };
+const RichKey NoKey = { 0, 0, 0 };
+const RichKey CustomModifierKey = { 0, 0, _CustomModifier };
 
 // Keymap based on the scancodes from 4 to 57, refer to the HID usage table on the meaning of each element
 const uint8_t qwertyKeymap[]  = {4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57};
@@ -59,7 +67,7 @@ const uint8_t dvorakKeymap[]  = {4, 27, 13,  8, 55, 24, 12,  7,  6, 11, 23, 17, 
 const uint8_t colemakKeymap[] = {4,  5,  6, 22,  9, 23,  7, 11, 24, 17,  8, 12, 16, 14, 28, 51, 20, 19, 21, 10, 15, 25, 26, 27, 13, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 18, 52, 53, 54, 55, 56, 42};
 
 const uint8_t *Keymap[] =
-{   
+{
     qwertyKeymap,
     dvorakKeymap,
     colemakKeymap
@@ -67,7 +75,7 @@ const uint8_t *Keymap[] =
 
 // array of KeyMaps, one for each mode
 const KeyMap KeyMaps[] = {
-    &FirstKeypress_keymap,      /* NoKeys */
+    &EntryPoint_keymap,         /* NoKeys */
     &Normal_keymap,             /* Normal */
     &DoNothing_keymap,          /* RemnantKeys */
     &LeftAltMode_keymap,        /* LeftAlt */
@@ -77,7 +85,8 @@ const KeyMap KeyMaps[] = {
     &RightFuncMode_keymap,      /* RightFunc */
     &RightModMode_keymap,       /* RightMod */
     &AltTab_keymap,             /* AltTab */
-    &CtrlAltNumPad_keymap,      /* CtrlAltNumPad */
+    &CtrlWin_keymap,            /* CtrlWin */
+    &NumPad_keymap,             /* NumPad */
     &Configuration_keymap,      /* Configuration */
     &CapsLockSet_keymap         /* CapsLockSet */
 };
@@ -137,7 +146,8 @@ String GetModeString(){
         case RightFunc:       return "RightFunc";
         case RightMod:        return "RightMod";
         case AltTab:          return "AltTab";
-        case CtrlAltNumPad:   return "CtrlAltNumPad";
+        case CtrlWin:         return "CtrlWin";
+        case NumPad:          return "NumPad";
         case Configuration:   return "Configuration";
         case CapsLockSet:     return "CapsLockSet";
         default:              return "<unknown>";
@@ -178,7 +188,7 @@ RichKey mapNormalKeyToCurrentLayout(uint8_t *buf, uint8_t i){
         }
 
         return (RichKey){ 0, inkey };
-    }    
+    }
 }
 
 // the keymap that just maps the key to the current keyboard layout
@@ -187,33 +197,30 @@ RichKey Normal_keymap(uint8_t *buf, uint8_t i){
     return mapNormalKeyToCurrentLayout(buf, i);
 }
 
-RichKey FirstKeypress_keymap(uint8_t *buf, uint8_t i){
-    // map modifier
-    if (i == 0) switch (buf[0]){
-        case LAlt:
-            CurrentMode = LeftAlt;
-            return NoKey;
-        case RAlt:
-            CurrentMode = RightAlt;
-            return NoKey;
-    } 
-    // map key
-    else switch (buf[i]){
-        case _Backtick:
-            CurrentMode = Configuration;
-            return NoKey;
+RichKey EntryPoint_keymap(uint8_t *buf, uint8_t i){
+    // Modifier entry points
+    switch (buf[0]){
+        case LAlt: return LeftAltMode_keymap(buf, i);
+        case RAlt: return RightAltMode_keymap(buf, i);
     }
+
+    // normal key entry points
+    switch (buf[2]){
+        case _Backtick: return Configuration_keymap(buf, i);
+    }
+
+    // No special behavior activated. Apply normal keyboard behavior.
     return Normal_keymap(buf, i);
 }
 
 bool mapLAltModifier(uint8_t key, RichKey* out){
-    switch (key){        
+    switch (key){
         // func mode modifiers
         case _Q:             return mapModifier(LShift, LeftFunc, out);
         case _W:             return mapModifier(LAlt, LeftFunc, out);
         case _E:             return mapModifier(LCtrl, LeftFunc, out);
         case _R:             return mapModifier(LGui, LeftFunc, out);
-        
+
         // normal mode modifiers
         case _A:             return mapModifier(LShift, LeftMod, out);
         case _S:             return mapModifier(LAlt, LeftMod, out);
@@ -225,44 +232,48 @@ bool mapLAltModifier(uint8_t key, RichKey* out){
 
 RichKey LeftAltMode_keymap(uint8_t *buf, uint8_t i){
     CurrentMode = LeftAlt;
-    RichKey funcKey = LeftFuncMode_keymap(buf, 2);
+    RichKey funcKey = mapLeftFuncKey(buf, 2);
     // map modifier
-    if (i == 0) switch (buf[0]){
+    if (i == 0) switch (buf[i]){
         case LAlt:
             if (numKeysPressed(buf) == 0)
-                return NoKey;
+                return NoKey; // don't press LAlt by default - use it as a custom modifier
             else if (funcKey == NoKey){ // a non-func-mode key was pressed first
                 // press Alt key slightly earlier than other keys
                 PressKey((RichKey){ LAlt, 0 });
             }
-    } 
-    // map key
-    else switch (buf[i]){
-        case _C:           return CtrlAltNumPad_keymap(buf, i);
+    }
+    // map secondary modifier
+    else if (i == 2) switch (buf[i]){
+        case _X:           return NumPad_keymap(buf, i);
+        case _C:           return CtrlWin_keymap(buf, i);
     }
 
-    if (funcKey == NoKey) // a non-func-mode key was pressed first
+    // map key
+    if (funcKey == NoKey){ // a non-func-mode key was pressed first
+        // Switch to Normal keyboard where Alt key behaves like Alt key
         return Normal_keymap(buf, i);
-    else
+    }
+    else {
         return LeftFuncMode_keymap(buf, i);
+    }
 }
 
-RichKey LeftFuncMode_keymap(uint8_t *buf, uint8_t i){
-    CurrentMode = LeftFunc;
+RichKey mapLeftFuncKey(uint8_t *buf, uint8_t i){
     RichKey out;
     // map modifier
     if (i == 0) switch (buf[0]){
         case LAlt:
             return NoKey;
-    } 
+    }
     // map key
     else if (mapLAltModifier(buf[i], &out))
         return out;
     else switch (buf[i]){
         // AltTab
         case _Tab:           return AltTabKey(buf, LAlt);
-        // Activate WinSplit navigation mode
-        case _C:             return CtrlAltNumPad_keymap(buf, i);
+        case _X:             return NumPad_keymap(buf, i);
+        case _C:             return CtrlWin_keymap(buf, i);
         case _Y:             return (RichKey){ 0, _Escape };
         case _U:             return (RichKey){ 0, _Home };
         case _I:             return (RichKey){ 0, _PgUp };
@@ -288,6 +299,11 @@ RichKey LeftFuncMode_keymap(uint8_t *buf, uint8_t i){
     return NoKey;
 }
 
+RichKey LeftFuncMode_keymap(uint8_t *buf, uint8_t i){
+    CurrentMode = LeftFunc;
+    return mapLeftFuncKey(buf, i);
+}
+
 RichKey LeftModMode_keymap(uint8_t *buf, uint8_t i){
     CurrentMode = LeftMod;
     RichKey out;
@@ -297,7 +313,7 @@ RichKey LeftModMode_keymap(uint8_t *buf, uint8_t i){
             if (numKeysPressed(buf) == 0)
                 CurrentMode = LeftFunc;
             return NoKey;
-    } 
+    }
     // map key
     else if (mapLAltModifier(buf[i], &out))
         return out;
@@ -305,7 +321,7 @@ RichKey LeftModMode_keymap(uint8_t *buf, uint8_t i){
 }
 
 bool mapRAltModifier(uint8_t key, RichKey* out){
-    switch (key){        
+    switch (key){
         // func mode modifiers
         case _U:             return mapModifier(RGui, RightFunc, out);
         case _I:             return mapModifier(RCtrl, RightFunc, out);
@@ -323,31 +339,31 @@ bool mapRAltModifier(uint8_t key, RichKey* out){
 
 RichKey RightAltMode_keymap(uint8_t *buf, uint8_t i){
     CurrentMode = RightAlt;
-    RichKey funcKey = RightFuncMode_keymap(buf, 2);
+    RichKey funcKey = mapRightFuncKey(buf, 2);
     // map modifier
     if (i == 0) switch (buf[0]){
         case RAlt:
             if (numKeysPressed(buf) == 0)
-                return NoKey;
+                return NoKey; // don't press RAlt by default - use it as a custom modifier
             else if (funcKey == NoKey){ // a non-func-mode key was pressed first
                 // press Alt key slightly earlier than other keys
                 PressKey((RichKey){ RAlt, 0 });
             }
     }
     if (funcKey == NoKey) // a non-func-mode key was pressed first
+        // Switch to Normal keyboard where Alt key behaves like Alt key
         return Normal_keymap(buf, i);
     else
         return RightFuncMode_keymap(buf, i);
 }
 
-RichKey RightFuncMode_keymap(uint8_t *buf, uint8_t i){
-    CurrentMode = RightFunc;
+RichKey mapRightFuncKey(uint8_t *buf, uint8_t i){
     RichKey out;
     // map modifier
     if (i == 0) switch (buf[0]){
         case RAlt:
             return NoKey;
-    }     
+    }
     // map key
     else if (mapRAltModifier(buf[i], &out))
         return out;
@@ -360,9 +376,14 @@ RichKey RightFuncMode_keymap(uint8_t *buf, uint8_t i){
         case _3:             return (RichKey){ 0, _F3 };
         case _4:             return (RichKey){ 0, _F4 };
         case _5:             return (RichKey){ 0, _F5 };
-        case _6:             return (RichKey){ 0, _F6 };        
+        case _6:             return (RichKey){ 0, _F6 };
     }
     return NoKey;
+}
+
+RichKey RightFuncMode_keymap(uint8_t *buf, uint8_t i){
+    CurrentMode = RightFunc;
+    return mapRightFuncKey(buf, i);
 }
 
 RichKey RightModMode_keymap(uint8_t *buf, uint8_t i){
@@ -374,7 +395,7 @@ RichKey RightModMode_keymap(uint8_t *buf, uint8_t i){
             if (numKeysPressed(buf) == 0)
                 CurrentMode = RightFunc;
             return NoKey;
-    } 
+    }
     // map key
     else if (mapRAltModifier(buf[i], &out))
         return out;
@@ -386,7 +407,7 @@ RichKey AltTab_keymap(uint8_t *buf, uint8_t i){
     // map modifier
     if (i == 0) {
         return (RichKey){ buf[0] & (LAlt | RAlt | LShift | RShift), 0 };
-    } 
+    }
     // map key
     else switch (buf[i]){
         // AltTab
@@ -401,30 +422,65 @@ RichKey AltTab_keymap(uint8_t *buf, uint8_t i){
     return NoKey;
 }
 
-RichKey CtrlAltNumPad_keymap(uint8_t *buf, uint8_t i){
-    CurrentMode = CtrlAltNumPad;
+RichKey CtrlWin_keymap(uint8_t *buf, uint8_t i){
+    CurrentMode = CtrlWin;
+
+    // exit condition: first key pressed is no longer _C
+    if (buf[2] != _C) return EntryPoint_keymap(buf, i);
+
     // map modifier
     if (i == 0) {
         return NoKey;
-    } 
-    // map key
+    }
+    // map first key
+    else if (i == 2) { // must be _C because of exit guard
+        return (RichKey){ LCtrl | LGui, 0, _CustomModifier };
+    }
+    // map subsequent keys
+    else {
+        return mapNormalKeyToCurrentLayout(buf, i);
+    }
+}
+
+RichKey NumPad_keymap(uint8_t *buf, uint8_t i){
+    CurrentMode = NumPad;
+
+    // exit condition: first key pressed is no longer _X
+    if (buf[2] != _X) return EntryPoint_keymap(buf, i);
+
+    // map modifier
+    if (i == 0) {
+        return NoKey;
+    }
+    // map first key
+    else if (i == 2) { // must be _X because of exit guard
+        return CustomModifierKey;
+    }
+    // map subsequent keys
     else switch (buf[i]){
-        case _C:                    return (RichKey){ LCtrl | LAlt, 0 };
-        case _U:                    return (RichKey){ 0, _Numpad7 };
-        case _I:                    return (RichKey){ 0, _Numpad8 };
-        case _O:                    return (RichKey){ 0, _Numpad9 };
-        case _P:                    return (RichKey){ 0, _Numpad9 };
-        case _H:                    return (RichKey){ 0, _PgUp };
-        case _J:                    return (RichKey){ 0, _Numpad4 };
-        case _K:                    return (RichKey){ 0, _Numpad5 };
-        case _L:                    return (RichKey){ 0, _Numpad6 };
-        case _Semicolon:            return (RichKey){ 0, _Numpad6 };
-        case _Apostrophe:           return (RichKey){ 0, _PgDn };
-        case _N:                    return (RichKey){ 0, _Numpad1 };
-        case _M:                    return (RichKey){ 0, _Numpad1 };
-        case _Comma:                return (RichKey){ 0, _Numpad2 };
-        case _Fullstop:             return (RichKey){ 0, _Numpad3 };
-        case _ForwardSlash:         return (RichKey){ 0, _Numpad3 };   
+        case _7:                    return (RichKey){ 0, _Numpad7 };
+        case _8:                    return (RichKey){ 0, _Numpad8 };
+        case _9:                    return (RichKey){ 0, _Numpad9 };
+        case _0:                    return (RichKey){ 0, _NumpadTimes };
+        case _U:                    return (RichKey){ 0, _Numpad4 };
+        case _I:                    return (RichKey){ 0, _Numpad5 };
+        case _O:                    return (RichKey){ 0, _Numpad6 };
+        case _P:                    return (RichKey){ 0, _NumpadMinus };
+        case _LeftBracket:          return (RichKey){ 0, _NumpadEnter };
+        case _RightBracket:         return (RichKey){ 0, _NumLock };
+        case _H:                    return (RichKey){ 0, _Backspace };
+        case _J:                    return (RichKey){ 0, _Numpad1 };
+        case _K:                    return (RichKey){ 0, _Numpad2 };
+        case _L:                    return (RichKey){ 0, _Numpad3 };
+        case _Semicolon:            return (RichKey){ 0, _NumpadPlus };
+        case _Apostrophe:           return (RichKey){ LShift, _Dash }; // Underscore
+        case _N:                    return (RichKey){ LShift, _Semicolon }; // Colon
+        case _M:                    return (RichKey){ 0, _Numpad0 };
+        case _Comma:                return (RichKey){ 0, _Comma };
+        case _Fullstop:             return (RichKey){ 0, _Fullstop };
+        case _ForwardSlash:         return (RichKey){ 0, _NumpadDivide };
+        case _Space:                return (RichKey){ 0, _Space };
+        case _Enter:                return (RichKey){ 0, _Enter };
     }
     return NoKey;
 }
@@ -465,8 +521,8 @@ RichKey CapsLockSet_keymap(uint8_t *buf, uint8_t i){
     }
     // map key
     if (i >= 2) switch (buf[i]){
-        case _Backtick: 
-        case _CapsLock: 
+        case _Backtick:
+        case _CapsLock:
             return NoKey;
     }
     // default
@@ -505,6 +561,6 @@ String GetStateString(){
     String spaces = "            ";
     String stateStr = "[" + GetLayoutString() + "." + GetModeString() + "]";
     String neededSpaces = spaces.substring(0, 19 - stateStr.length());
-    
+
     return stateStr + neededSpaces;
 }

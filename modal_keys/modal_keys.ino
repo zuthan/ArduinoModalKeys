@@ -15,7 +15,7 @@
 // Function Declarations
 // *******************************************************************************************
 
-void PressAndReleaseKey(RichKey key); 
+void PressAndReleaseKey(RichKey key);
 void MergeKeyIntoBuffer(RichKey key, uint8_t *buf);
 void CopyBuf (uint8_t *from_buf, uint8_t *to_buf);
 inline void SendKeysToHost (uint8_t *buf);
@@ -161,7 +161,9 @@ void loop()
 // *******************************************************************************************
 bool operator==(const RichKey& lhs, const RichKey& rhs)
 {
-    return lhs.mods == rhs.mods && lhs.key == rhs.key;
+    return lhs.mods == rhs.mods
+        && lhs.key == rhs.key
+        && lhs.flags == rhs.flags;
 }
 
 void Log(String text){

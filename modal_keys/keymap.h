@@ -3,7 +3,10 @@
 
 // https://www.win.tue.nl/~aeb/linux/kbd/scancodes-14.html
 
-// Modifier flags
+// Custom Flags
+#define _CustomModifier   (1 << 0)
+
+// Modifier Flags
 #define LCtrl   (1 << 0)
 #define LShift  (1 << 1)
 #define LAlt    (1 << 2)
@@ -144,6 +147,7 @@
 struct RichKey {
     uint8_t mods;
     uint8_t key;
+    uint8_t flags;
 };
 
 // typedef for functions that map keys to RichKeys
