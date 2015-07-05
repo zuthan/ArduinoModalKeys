@@ -9,6 +9,7 @@
 #ifdef dobogusinclude
 #include <spi4teensy3.h>
 #include <SPI.h>
+#include <EEPROM.h>
 #endif
 
 // *******************************************************************************************
@@ -141,6 +142,8 @@ inline void SendKeysToHost (uint8_t *buf)
 
 void setup()
 {
+    InitializeState();
+
     Serial.begin( 115200 );
 
     if (Usb.Init() == -1 && WriteToLog)

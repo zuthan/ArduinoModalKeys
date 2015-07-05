@@ -164,6 +164,7 @@ extern void PressAndReleaseKey(RichKey key);
 // *******************************************************************************************
 // keymap.cpp functions
 // *******************************************************************************************
+extern void InitializeState();
 extern void OnKeyboardEvent(uint8_t *prev_buf, uint8_t *cur_buf);
 extern RichKey MapKey(uint8_t *buf, uint8_t i);
 extern String GetStateString();

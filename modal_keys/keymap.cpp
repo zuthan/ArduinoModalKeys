@@ -1,4 +1,9 @@
 #include "keymap.h"
+#include <EEPROM.h>
+
+// Map of where in EEPROM storage to store each config variable
+#define OSModeSlot 0
+#define KeyboardLayoutSlot 1
 
 // ****************************************************************************
 // Type Declarations
@@ -143,6 +148,17 @@ uint8_t WindowSnapModifierKeycode() {
 // ****************************************************************************
 // Helper Functions
 // ****************************************************************************
+
+void loadOSMode() {
+    OSMode osMode = Windows;
+    EEPROM.get( OSModeSlot, osMode );
+    CurrentOSMode = osMode;
+}
+
+void setOSMode(OSMode osMode) {
+    CurrentOSMode = osMode;
+    EEPROM.put( OSModeSlot, osMode );
+}
 
 bool numKeysPressed(uint8_t *buf){
     uint8_t count = 0;
@@ -545,11 +561,11 @@ RichKey Configuration_keymap(uint8_t *buf, uint8_t i){
     if (i == 0) switch (buf[0]) {
         case LCtrl:
         case RCtrl:
-            CurrentOSMode = Windows;
+            setOSMode(Windows);
             break;
         case LGui:
         case RGui:
-            CurrentOSMode = OSX;
+            setOSMode(OSX);
             break;
     }
 
@@ -573,6 +589,10 @@ RichKey Configuration_keymap(uint8_t *buf, uint8_t i){
 // ****************************************************************************
 // Shared Function Implementations
 // ****************************************************************************
+
+void InitializeState() {
+   loadOSMode();
+}
 
 void OnKeyboardEvent(uint8_t *prev_buf, uint8_t *cur_buf){
     // last key released
