@@ -4,6 +4,12 @@
 // Type Declarations
 // ****************************************************************************
 
+// Operating System Modes
+typedef enum {
+    Windows = 0,
+    OSX
+} OSMode;
+
 // Keyboard Layouts
 typedef enum {
     qwerty = 0,
@@ -24,11 +30,15 @@ typedef enum
     RightFunc,
     RightMod,
     AltTab,
-    CtrlWin,
+    WindowSnap,
     NumPad,
-    Configuration,
-    CapsLockSet,
+    Configuration
 } Mode;
+
+typedef enum {
+    Left = 0,
+    Right
+} Side;
 
 // ****************************************************************************
 // Function Declarations
@@ -49,10 +59,9 @@ RichKey RightAltMode_keymap(uint8_t *buf, uint8_t i);
 RichKey RightFuncMode_keymap(uint8_t *buf, uint8_t i);
 RichKey RightModMode_keymap(uint8_t *buf, uint8_t i);
 RichKey AltTab_keymap(uint8_t *buf, uint8_t i);
-RichKey CtrlWin_keymap(uint8_t *buf, uint8_t i);
+RichKey WindowSnap_keymap(uint8_t *buf, uint8_t i);
 RichKey NumPad_keymap(uint8_t *buf, uint8_t i);
 RichKey Configuration_keymap(uint8_t *buf, uint8_t i);
-RichKey CapsLockSet_keymap(uint8_t *buf, uint8_t i);
 
 // ****************************************************************************
 // Constants
@@ -85,12 +94,10 @@ const KeyMap KeyMaps[] = {
     &RightFuncMode_keymap,      /* RightFunc */
     &RightModMode_keymap,       /* RightMod */
     &AltTab_keymap,             /* AltTab */
-    &CtrlWin_keymap,            /* CtrlWin */
+    &WindowSnap_keymap,         /* WindowSnap */
     &NumPad_keymap,             /* NumPad */
     &Configuration_keymap,      /* Configuration */
-    &CapsLockSet_keymap         /* CapsLockSet */
 };
-
 
 // ****************************************************************************
 // Variables
@@ -98,7 +105,40 @@ const KeyMap KeyMaps[] = {
 
 KeyboardLayout CurrentLayout = dvorak;
 Mode CurrentMode = NoKeys;
-RichKey CapsLockKey = { LCtrl, 0 };
+OSMode CurrentOSMode = Windows;
+
+// ****************************************************************************
+// State Dependant Values
+// ****************************************************************************
+
+RichKey CapsLockKey() {
+    switch(CurrentOSMode){
+        case Windows: return (RichKey){ LCtrl, 0 };
+        case OSX: return (RichKey){ LGui, 0 };
+    }
+}
+
+uint8_t AppSwitchModifierKeycode(Side side) {
+    switch (side) {
+        case Left:
+            switch (CurrentOSMode){
+                case Windows: return LAlt;
+                case OSX: return LGui;
+            }
+        case Right:
+            switch (CurrentOSMode){
+                case Windows: return RAlt;
+                case OSX: return RGui;
+            }
+    }
+}
+
+uint8_t WindowSnapModifierKeycode() {
+    switch(CurrentOSMode){
+        case Windows: return LCtrl | LGui;
+        case OSX: return LCtrl | LGui | LShift;
+    }
+}
 
 // ****************************************************************************
 // Helper Functions
@@ -111,6 +151,7 @@ bool numKeysPressed(uint8_t *buf){
     }
     return count;
 }
+
 bool numModsPressed(uint8_t *buf){
     uint8_t bitset = buf[0];
     uint8_t count;
@@ -118,20 +159,29 @@ bool numModsPressed(uint8_t *buf){
         bitset &= bitset - 1;
     return count;
 }
+
 bool numKeysOrModsPressed(uint8_t *buf){
     return numModsPressed(buf) + numKeysPressed(buf);
 }
 
-RichKey AltTabKey(uint8_t *buf, uint8_t altKey){
+RichKey AltTabKey(uint8_t *buf, Side side){
     if (numKeysPressed(buf) == 1){
         CurrentMode = AltTab;
-        return (RichKey){ altKey, _Tab };
+        return (RichKey){ AppSwitchModifierKeycode(side), _Tab };
     } else return (RichKey){ 0, _Tab };
 }
+
 bool mapModifier(uint8_t mod, Mode newMode, RichKey* out){
     *out = (RichKey){ mod, 0 };
     CurrentMode = newMode;
     return true;
+}
+
+String GetOSModeString(){
+    switch (CurrentOSMode){
+        case Windows:    return "Win";
+        case OSX:        return "OSX";
+    }
 }
 
 String GetModeString(){
@@ -146,10 +196,9 @@ String GetModeString(){
         case RightFunc:       return "RightFunc";
         case RightMod:        return "RightMod";
         case AltTab:          return "AltTab";
-        case CtrlWin:         return "CtrlWin";
+        case WindowSnap:      return "WindowSnap";
         case NumPad:          return "NumPad";
         case Configuration:   return "Configuration";
-        case CapsLockSet:     return "CapsLockSet";
         default:              return "<unknown>";
     }
 }
@@ -179,7 +228,7 @@ RichKey mapNormalKeyToCurrentLayout(uint8_t *buf, uint8_t i){
     else {
         uint8_t inkey = buf[i];
         switch (inkey){
-            case _CapsLock:         return CapsLockKey;
+            case _CapsLock:         return CapsLockKey();
         }
         // lookup key for current keyboard layout
         if (inkey >= _A && inkey <= _CapsLock){
@@ -246,7 +295,7 @@ RichKey LeftAltMode_keymap(uint8_t *buf, uint8_t i){
     // map secondary modifier
     else if (i == 2) switch (buf[i]){
         case _X:           return NumPad_keymap(buf, i);
-        case _C:           return CtrlWin_keymap(buf, i);
+        case _C:           return WindowSnap_keymap(buf, i);
     }
 
     // map key
@@ -271,9 +320,9 @@ RichKey mapLeftFuncKey(uint8_t *buf, uint8_t i){
         return out;
     else switch (buf[i]){
         // AltTab
-        case _Tab:           return AltTabKey(buf, LAlt);
+        case _Tab:           return AltTabKey(buf, Left);
         case _X:             return NumPad_keymap(buf, i);
-        case _C:             return CtrlWin_keymap(buf, i);
+        case _C:             return WindowSnap_keymap(buf, i);
         case _Y:             return (RichKey){ 0, _Escape };
         case _U:             return (RichKey){ 0, _Home };
         case _I:             return (RichKey){ 0, _PgUp };
@@ -281,7 +330,7 @@ RichKey mapLeftFuncKey(uint8_t *buf, uint8_t i){
         case _P:             return (RichKey){ 0, _End };
         case _LeftBracket:   return (RichKey){ 0, _Enter };
         case _RightBracket:  return (RichKey){ 0, _Menu };
-        case _Backslash:     return AltTabKey(buf, LAlt);
+        case _Backslash:     return AltTabKey(buf, Left);
         case _Backspace:     return (RichKey){ 0, _CapsLock };
         case _H:             return (RichKey){ 0, _Backspace };
         case _J:             return (RichKey){ 0, _Left };
@@ -369,8 +418,8 @@ RichKey mapRightFuncKey(uint8_t *buf, uint8_t i){
         return out;
     else switch (buf[i]){
         // AltTab
-        case _Tab:           return AltTabKey(buf, RAlt);
-        case _Backslash:     return AltTabKey(buf, RAlt);
+        case _Tab:           return AltTabKey(buf, Right);
+        case _Backslash:     return AltTabKey(buf, Right);
         case _1:             return (RichKey){ 0, _F1 };
         case _2:             return (RichKey){ 0, _F2 };
         case _3:             return (RichKey){ 0, _F3 };
@@ -406,7 +455,12 @@ RichKey AltTab_keymap(uint8_t *buf, uint8_t i){
     CurrentMode = AltTab;
     // map modifier
     if (i == 0) {
-        return (RichKey){ buf[0] & (LAlt | RAlt | LShift | RShift), 0 };
+        uint8_t Mods = 0;
+        if (buf[0] & LAlt) Mods |= AppSwitchModifierKeycode(Left);
+        if (buf[0] & RAlt) Mods |= AppSwitchModifierKeycode(Right);
+        if (buf[0] & LShift) Mods |= LShift;
+        if (buf[0] & RShift) Mods |= RShift;
+        return (RichKey){ Mods, 0 };
     }
     // map key
     else switch (buf[i]){
@@ -422,8 +476,8 @@ RichKey AltTab_keymap(uint8_t *buf, uint8_t i){
     return NoKey;
 }
 
-RichKey CtrlWin_keymap(uint8_t *buf, uint8_t i){
-    CurrentMode = CtrlWin;
+RichKey WindowSnap_keymap(uint8_t *buf, uint8_t i){
+    CurrentMode = WindowSnap;
 
     // exit condition: first key pressed is no longer _C
     if (buf[2] != _C) return EntryPoint_keymap(buf, i);
@@ -434,7 +488,7 @@ RichKey CtrlWin_keymap(uint8_t *buf, uint8_t i){
     }
     // map first key
     else if (i == 2) { // must be _C because of exit guard
-        return (RichKey){ LCtrl | LGui, 0, _CustomModifier };
+        return (RichKey){ WindowSnapModifierKeycode(), 0, _CustomModifier };
     }
     // map subsequent keys
     else {
@@ -487,45 +541,31 @@ RichKey NumPad_keymap(uint8_t *buf, uint8_t i){
 
 RichKey Configuration_keymap(uint8_t *buf, uint8_t i){
     CurrentMode = Configuration;
+     // map modifier
+    if (i == 0) switch (buf[0]) {
+        case LCtrl:
+        case RCtrl:
+            CurrentOSMode = Windows;
+            break;
+        case LGui:
+        case RGui:
+            CurrentOSMode = OSX;
+            break;
+    }
+
      // map key
     if (i >= 2) switch (buf[i]){
         case _Backtick: return NoKey;
         case _1:
             CurrentLayout = qwerty;
-            CurrentMode = RemnantKeys;
-            return NoKey;
+            break;
         case _2:
             CurrentLayout = dvorak;
-            CurrentMode = RemnantKeys;
-            return NoKey;
+            break;
         case _3:
             CurrentLayout = colemak;
-            CurrentMode = RemnantKeys;
-            return NoKey;
-        case _CapsLock:
-            CapsLockKey = NoKey;
-            CurrentMode = CapsLockSet;
-            return NoKey;
+            break;
     }
-    // default
-    CurrentMode = RemnantKeys;
-    return NoKey;
-}
-
-RichKey CapsLockSet_keymap(uint8_t *buf, uint8_t i){
-    CurrentMode = CapsLockSet;
-     // map modifier
-    if (i == 0) {
-        CapsLockKey.mods |= buf[0];
-        return NoKey;
-    }
-    // map key
-    if (i >= 2) switch (buf[i]){
-        case _Backtick:
-        case _CapsLock:
-            return NoKey;
-    }
-    // default
     CurrentMode = RemnantKeys;
     return NoKey;
 }
@@ -541,10 +581,10 @@ void OnKeyboardEvent(uint8_t *prev_buf, uint8_t *cur_buf){
             case Configuration: // send backtick on release if special function wasn't used
                 PressAndReleaseKey((RichKey){ 0, _Backtick } );
                 break;
-            case LeftAlt:
+            case LeftAlt: // send Left Alt on release if no other keys were pressed while it was down
                 PressAndReleaseKey((RichKey){ LAlt, 0 } );
                 break;
-            case RightAlt:
+            case RightAlt: // send Right Alt on release if no other keys were pressed while it was down
                 PressAndReleaseKey((RichKey){ RAlt, 0 } );
                 break;
         }
@@ -559,8 +599,8 @@ RichKey MapKey(uint8_t *buf, uint8_t i){
 
 String GetStateString(){
     String spaces = "            ";
-    String stateStr = "[" + GetLayoutString() + "." + GetModeString() + "]";
-    String neededSpaces = spaces.substring(0, 19 - stateStr.length());
+    String stateStr = "[" + GetOSModeString() + "." + GetLayoutString() + "." + GetModeString() + "]";
+    String neededSpaces = spaces.substring(0, 23 - stateStr.length());
 
     return stateStr + neededSpaces;
 }
