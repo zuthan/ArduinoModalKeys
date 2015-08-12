@@ -37,7 +37,11 @@ typedef enum
     RightMod,
     AltTab,
     WindowSnap,
-    NumPad
+    NumPad,
+    GamingNoKeys,
+    GamingBacktick,
+    GamingTab,
+    GamingSpace
 } Mode;
 
 typedef enum {
@@ -86,6 +90,11 @@ RichKey AltTab_keymap(uint8_t *buf, uint8_t i);
 RichKey WindowSnap_keymap(uint8_t *buf, uint8_t i);
 RichKey NumPad_keymap(uint8_t *buf, uint8_t i);
 
+RichKey GamingEntryPoint_keymap(uint8_t *buf, uint8_t i);
+RichKey GamingBacktick_keymap(uint8_t *buf, uint8_t i);
+RichKey GamingTab_keymap(uint8_t *buf, uint8_t i);
+RichKey GamingSpace_keymap(uint8_t *buf, uint8_t i);
+
 // ****************************************************************************
 // Constants
 // ****************************************************************************
@@ -120,6 +129,10 @@ const KeyMap KeyMaps[] = {
     &AltTab_keymap,             /* AltTab */
     &WindowSnap_keymap,         /* WindowSnap */
     &NumPad_keymap,             /* NumPad */
+    &GamingEntryPoint_keymap,   /* GamingNoKeys */
+    &GamingBacktick_keymap,     /* GamingBacktick */
+    &GamingTab_keymap,          /* GamingTab */
+    &GamingSpace_keymap,        /* GamingSpace */
 };
 
 // ****************************************************************************
@@ -171,6 +184,10 @@ bool ModeStartsDirty(Mode mode) {
         case Configuration:
         case LeftAlt:
         case RightAlt:
+        case GamingNoKeys:
+        case GamingBacktick:
+        case GamingTab:
+        case GamingSpace:
             return false;
             break;
         default:
@@ -209,6 +226,10 @@ RichKey Configuration_keymap(uint8_t *buf, uint8_t i) {
         case _F3:
             CurrentLayout = colemak;
             EntryPointMode = NoKeys;
+            break;
+        case _F4:
+            CurrentLayout = qwerty;
+            EntryPointMode = GamingNoKeys;
             break;
     }
 
@@ -537,6 +558,80 @@ RichKey NumPad_keymap(uint8_t *buf, uint8_t i) {
     return NoKey;
 }
 
+// ================== Gaming Mode ===================
+
+RichKey GamingEntryPoint_keymap(uint8_t *buf, uint8_t i) {
+    // map modifier
+    if (i == 0) switch (buf[0]) {
+        case LCtrl:       return sendKey(_Backspace);
+        case LGui:        return sendKey(_Enter);
+    }
+    // map key
+    else switch (buf[i]) {
+        case _Escape:     return enterMode(Configuration, buf, i);
+        case _Backtick:   return enterMode(GamingBacktick, buf, i);
+        case _Tab:        return enterMode(GamingTab, buf, i);
+        case _CapsLock:   return sendKey(_Space);
+        case _Space:      return enterMode(GamingSpace, buf, i);
+    }
+
+    // No special behavior activated. Apply normal keyboard behavior.
+    return mapNormalKeyToCurrentLayout(buf, i);
+}
+
+
+RichKey GamingBacktick_keymap(uint8_t *buf, uint8_t i) {
+    // map modifier
+    if (i == 0) switch (buf[0]) {
+
+    }
+    // map key
+    else switch (buf[i]) {
+        case _Backtick:      return NoKey;
+        case _Space:         return sendModifiers(LCtrl);
+        case _1:             return sendKey(_F1);
+        case _2:             return sendKey(_F2);
+        case _3:             return sendKey(_F3);
+        case _4:             return sendKey(_F4);
+        case _5:             return sendKey(_F5);
+        case _6:             return sendKey(_F6);
+    }
+    return NoKey;
+}
+
+RichKey GamingTab_keymap(uint8_t *buf, uint8_t i) {
+     // map modifier
+    if (i == 0) switch (buf[0]) {
+
+    }
+    // map key
+    else switch (buf[i]){
+        case _Tab:           return NoKey;
+        case _Space:         return sendModifiers(LCtrl);
+        case _Q:             return sendKey(_6);
+        case _W:             return sendKey(_7);
+        case _E:             return sendKey(_8);
+        case _R:             return sendKey(_9);
+        case _T:             return sendKey(_0);
+    }
+    return mapNormalKeyToCurrentLayout(buf, i);
+}
+
+RichKey GamingSpace_keymap(uint8_t *buf, uint8_t i) {
+    // map modifier
+    if (i == 0) switch (buf[0]) {
+
+    }
+    // map key
+    else switch (buf[i]){
+        case _Space:         return sendModifiers(LCtrl);
+        case _Backtick:      return enterMode(GamingBacktick, buf, i);
+        case _Tab:           return enterMode(GamingTab, buf, i);
+    }
+    return mapNormalKeyToCurrentLayout(buf, i);
+}
+
+
 // ****************************************************************************
 // Helper Functions
 // ****************************************************************************
@@ -631,6 +726,10 @@ String GetModeString() {
         case AltTab:          return "AltTab";
         case WindowSnap:      return "WindowSnap";
         case NumPad:          return "NumPad";
+        case GamingNoKeys:    return "GamingNoKeys";
+        case GamingBacktick:  return "GamingBacktick";
+        case GamingTab:       return "GamingTab";
+        case GamingSpace:     return "GamingSpace";
         default:              return "<unknown>";
     }
 }
@@ -668,6 +767,15 @@ void OnKeyboardEvent(uint8_t *prev_buf, uint8_t *cur_buf) {
                 break;
             case RightAlt: // send Right Alt on release
                 PressAndReleaseKey((RichKey){ RAlt, 0 } );
+                break;
+            case GamingBacktick: // send Backtick on release
+                PressAndReleaseKey((RichKey){ 0, _Backtick } );
+                break;
+            case GamingTab: // send Tab on release
+                PressAndReleaseKey((RichKey){ 0, _Tab } );
+                break;
+            case GamingSpace: // send Space on release
+                PressAndReleaseKey((RichKey){ 0, _Space } );
                 break;
         }
         enterMode(EntryPointMode);
