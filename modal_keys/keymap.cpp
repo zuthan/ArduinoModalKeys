@@ -202,14 +202,17 @@ RichKey Configuration_keymap(uint8_t *buf, uint8_t i) {
     if (i >= 2) switch (buf[i]){
         case _Escape: return NoKey;
         case _F1:
+            ModeIsDirty = true;
             CurrentLayout = qwerty;
             EntryPointMode = NoKeys;
             break;
         case _F2:
+            ModeIsDirty = true;
             CurrentLayout = dvorak;
             EntryPointMode = NoKeys;
             break;
         case _F3:
+            ModeIsDirty = true;
             CurrentLayout = qwerty;
             EntryPointMode = GamingNoKeys;
             break;
