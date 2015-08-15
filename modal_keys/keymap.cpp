@@ -41,6 +41,7 @@ typedef enum
     GamingNoKeys,
     GamingBacktick,
     GamingTab,
+    GamingCapsLock,
     GamingSpace
 } Mode;
 
@@ -56,7 +57,7 @@ typedef enum {
 // helpers
 void loadOSMode();
 void setOSMode(OSMode osMode);
-RichKey enterMode(Mode mode);
+void setMode(Mode mode, uint8_t *buf);
 RichKey enterMode(Mode mode, uint8_t *buf, uint8_t i);
 bool numKeysPressed(uint8_t *buf);
 bool numModsPressed(uint8_t *buf);
@@ -93,6 +94,7 @@ RichKey NumPad_keymap(uint8_t *buf, uint8_t i);
 RichKey GamingEntryPoint_keymap(uint8_t *buf, uint8_t i);
 RichKey GamingBacktick_keymap(uint8_t *buf, uint8_t i);
 RichKey GamingTab_keymap(uint8_t *buf, uint8_t i);
+RichKey GamingCapsLock_keymap(uint8_t *buf, uint8_t i);
 RichKey GamingSpace_keymap(uint8_t *buf, uint8_t i);
 
 // ****************************************************************************
@@ -132,6 +134,7 @@ const KeyMap KeyMaps[] = {
     &GamingEntryPoint_keymap,   /* GamingNoKeys */
     &GamingBacktick_keymap,     /* GamingBacktick */
     &GamingTab_keymap,          /* GamingTab */
+    &GamingCapsLock_keymap,     /* GamingCapsLock */
     &GamingSpace_keymap,        /* GamingSpace */
 };
 
@@ -175,23 +178,6 @@ uint8_t WindowSnapModifierKeycode() {
     switch(CurrentOSMode){
         case Windows: return LCtrl | LGui;
         case OSX: return LCtrl | LGui | LShift;
-    }
-}
-
-bool ModeStartsDirty(Mode mode) {
-    switch (mode) {
-        case NoKeys:
-        case Configuration:
-        case LeftAlt:
-        case RightAlt:
-        case GamingNoKeys:
-        case GamingBacktick:
-        case GamingTab:
-        case GamingSpace:
-            return false;
-            break;
-        default:
-            return true;
     }
 }
 
@@ -647,13 +633,13 @@ void setOSMode(OSMode osMode) {
     EEPROM.put( OSModeSlot, osMode );
 }
 
-RichKey enterMode(Mode mode) {
+void setMode(Mode mode, uint8_t *buf) {
     CurrentMode = mode;
-    ModeIsDirty = ModeStartsDirty(mode);
+    ModeIsDirty = (numKeysOrModsPressed(buf) > 1);
 }
 
 RichKey enterMode(Mode mode, uint8_t *buf, uint8_t i) {
-    enterMode(mode);
+    setMode(mode, buf);
     return MapKey(buf, i);
 }
 
@@ -729,6 +715,7 @@ String GetModeString() {
         case GamingNoKeys:    return "GamingNoKeys";
         case GamingBacktick:  return "GamingBacktick";
         case GamingTab:       return "GamingTab";
+        case GamingCapsLock:  return "GamingCapsLock";
         case GamingSpace:     return "GamingSpace";
         default:              return "<unknown>";
     }
@@ -778,7 +765,8 @@ void OnKeyboardEvent(uint8_t *prev_buf, uint8_t *cur_buf) {
                 PressAndReleaseKey((RichKey){ 0, _Space } );
                 break;
         }
-        enterMode(EntryPointMode);
+        setMode(EntryPointMode, cur_buf);
+        return;
     }
 }
 
@@ -788,9 +776,9 @@ RichKey MapKey(uint8_t *buf, uint8_t i) {
 }
 
 String GetStateString(){
-    String spaces = "            ";
+    String spaces = "                              ";
     String stateStr = "[" + GetOSModeString() + "." + GetLayoutString() + "." + GetModeString() + GetDirtyString() + "]";
-    String neededSpaces = spaces.substring(0, 23 - stateStr.length());
+    String neededSpaces = spaces.substring(0, 26 - stateStr.length());
 
     return stateStr + neededSpaces;
 }
