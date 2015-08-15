@@ -12,28 +12,11 @@
 #include <EEPROM.h>
 #endif
 
-// *******************************************************************************************
-// Function Declarations
-// *******************************************************************************************
-
-void PressAndReleaseKey(RichKey key);
-void MergeKeyIntoBuffer(RichKey key, uint8_t *buf);
-void CopyBuf (uint8_t *from_buf, uint8_t *to_buf);
-inline void SendKeysToHost (uint8_t *buf);
-void SendState(uint8_t *buf);
-void PrintState(uint8_t *buf);
-
 class KbdRptParser : public KeyboardReportParser
 {
 protected:
     virtual void Parse(HID *hid, bool is_rpt_id, uint8_t len, uint8_t *buf);
 };
-
-
-// *******************************************************************************************
-// Constants
-// *******************************************************************************************
-
 
 // *******************************************************************************************
 // Variables
@@ -64,17 +47,64 @@ void KbdRptParser::Parse(HID *hid, bool is_rpt_id, uint8_t len, uint8_t *buf) {
     }
 
     CopyBuf(buf, prevState.bInfo);
-
     CopyBuf(buf, InputBuffer);
-    CopyBuf(outbuf, OutputBuffer);
-    SendState(outbuf);
+    TransitionToState(outbuf);
 };
 
 // *******************************************************************************************
 // Helper Functions
 // *******************************************************************************************
 
-void MergeKeyIntoBuffer(RichKey key, uint8_t *buf){
+// returns true if a new state was transmitted
+bool TransitionToState(uint8_t newbuf[8]) {
+    if (EqualBuffers(newbuf, OutputBuffer)) { // no need to run transition if states are already equal
+        PrintState(InputBuffer, OutputBuffer, false);
+        return false;
+    }
+
+    uint8_t oldbuf[8] = { 0 };
+    CopyBuf(OutputBuffer, oldbuf);
+
+    // do released keys
+    uint8_t releaseKeys[8] = { 0 };
+    if (KeyIntersection(oldbuf, newbuf, releaseKeys)){
+        releaseKeys[0] = oldbuf[0];
+        SendState(releaseKeys);
+    }
+
+    // do released mods
+    uint8_t releaseMods[8] = { 0 };
+    if (ModIntersection(oldbuf, newbuf, releaseMods)){
+        CopyKeys(releaseKeys, releaseMods);
+        SendState(releaseMods);
+    }
+
+    // do pressed mods
+    uint8_t pressMods[8] = { 0 };
+    if (newbuf[0] != releaseMods[0]){
+        pressMods[0] = newbuf[0];
+        CopyKeys(releaseKeys, pressMods);
+        SendState(pressMods);
+    }
+
+    // do pressed keys
+    if (!EqualKeys(newbuf, releaseKeys)){
+        SendState(newbuf);
+    }
+    return true;
+}
+
+void SendState(uint8_t buf[8]) {
+    CopyBuf(buf, OutputBuffer);
+    if (WriteToLog)
+        PrintState(InputBuffer, OutputBuffer, true);
+    if (SendOutput){
+        delay(1);
+        SendKeysToHost(OutputBuffer);
+    }
+}
+
+void MergeKeyIntoBuffer(RichKey key, uint8_t buf[8]){
     buf[0] = buf[0] | key.mods;
     for (uint8_t i=2; i<8; i++) {
         if (buf[i] == key.key) return;
@@ -85,49 +115,109 @@ void MergeKeyIntoBuffer(RichKey key, uint8_t *buf){
     }
 }
 
-void SendState(uint8_t *buf) {
-    if (WriteToLog)
-        PrintState(InputBuffer, buf);
-    if (SendOutput)
-        SendKeysToHost(buf);
-}
-
-void PrintKeyState(uint8_t *buf) {
-    MODIFIERKEYS mod;
-    *((uint8_t*)&mod) = buf[0];
-    Serial.print("<");
-    Serial.print((mod.bmLeftCtrl   == 1) ? "C" : "-");
-    Serial.print((mod.bmLeftShift  == 1) ? "S" : "-");
-    Serial.print((mod.bmLeftAlt    == 1) ? "A" : "-");
-    Serial.print((mod.bmLeftGUI    == 1) ? "G" : "-");
-    Serial.print(".");
-    Serial.print((mod.bmRightCtrl   == 1) ? "C" : "-");
-    Serial.print((mod.bmRightShift  == 1) ? "S" : "-");
-    Serial.print((mod.bmRightAlt    == 1) ? "A" : "-");
-    Serial.print((mod.bmRightGUI    == 1) ? "G" : "-");
-    Serial.print(">");
-    for (uint8_t i = 2; i < 8; i++) {
-        Serial.print(" ");
-        uint8_t key = buf[i];
-        if (key)
-            PrintHex<uint8_t>(key, 0x80);
+// Find keys present in both buf1 and buf2 and put them in outbuf.
+// If there are any keys in buf1 that are not in buf2, returns true; otherwise returns false.
+bool KeyIntersection(uint8_t buf1[8], uint8_t buf2[8], uint8_t *outbuf) {
+    bool nonEmptyDiff = false;
+    for (uint8_t i=2; i<8; i++) if (buf1[i]) {
+        if (IsKeyPressedInBuffer(buf1[i], buf2))
+            outbuf[i] = buf1[i];
         else
-            Serial.print("__");
+            nonEmptyDiff = true;
     }
+    return nonEmptyDiff;
 }
 
-void PrintState(uint8_t *inBuf, uint8_t *outBuf) {
-    Serial.print(GetStateString());
-    PrintKeyState(inBuf);
-    Serial.print("  ==>  ");
-    PrintKeyState(outBuf);
-    Serial.println();
+// Find mods present in both buf1 and buf2 and put them in outbuf.
+// If there are any mods in buf1 that are not in buf2, returns true; otherwise returns false.
+bool ModIntersection(uint8_t buf1[8], uint8_t buf2[8], uint8_t *outbuf) {
+    outbuf[0] = buf1[0] & buf2[0];
+    uint8_t diff = buf1[0] & ~buf2[0];
+    // Log("mods diff: " + ModifiersToString(buf1[0]) + " - " + ModifiersToString(buf2[0]) + " = " + ModifiersToString(diff));
+    return !!diff;
 }
 
 void CopyBuf(uint8_t *from_buf, uint8_t *to_buf) {
     for (uint8_t i=0; i<8; i++) {
         to_buf[i] = from_buf[i];
     }
+}
+
+void CopyKeys(uint8_t *from_buf, uint8_t *to_buf) {
+    for (uint8_t i=2; i<8; i++) {
+        to_buf[i] = from_buf[i];
+    }
+}
+
+bool EqualBuffers(uint8_t *buf1, uint8_t *buf2) {
+    bool equal = true;
+    for (uint8_t i=0; i<8; i++) if (buf1[i] != buf2[i]) {
+        equal = false;
+    }
+    return equal;
+}
+
+bool EqualKeys(uint8_t *buf1, uint8_t *buf2) {
+    bool equal = true;
+    for (uint8_t i=2; i<8; i++) if (buf1[i] != buf2[i]) {
+        equal = false;
+    }
+    return equal;
+}
+
+String KeyToHexString(uint8_t key) {
+  int num_nibbles = 2;
+  String out = "";
+  do {
+          char v = 48 + (((key >> (num_nibbles - 1) * 4)) & 0x0f);
+          if(v > 57) v += 7;
+          out += v;
+  } while(--num_nibbles);
+  return out;
+}
+
+String ModifiersToString(uint8_t mods) {
+    MODIFIERKEYS mod;
+    *((uint8_t*)&mod) = mods;
+    String str = "<" +
+    String((mod.bmLeftCtrl   == 1) ? "C" : "-") +
+    String((mod.bmLeftShift  == 1) ? "S" : "-") +
+    String((mod.bmLeftAlt    == 1) ? "A" : "-") +
+    String((mod.bmLeftGUI    == 1) ? "G" : "-") +
+    "." +
+    String((mod.bmRightCtrl   == 1) ? "C" : "-") +
+    String((mod.bmRightShift  == 1) ? "S" : "-") +
+    String((mod.bmRightAlt    == 1) ? "A" : "-") +
+    String((mod.bmRightGUI    == 1) ? "G" : "-") +
+    ">";
+    return str;
+}
+
+String KeyToString(uint8_t key) {
+    if (key) {
+        return KeyToHexString(key);
+    } else {
+        return "__";
+    }
+}
+
+String BufferToString(uint8_t buf[8]) {
+    String out = "";
+    out += ModifiersToString(buf[0]);
+    for (uint8_t i = 2; i < 8; i++) {
+        out += (" " + KeyToString(buf[i]));
+    }
+    return out;
+}
+
+void PrintState(uint8_t *inBuf, uint8_t *outBuf, bool outputChanged) {
+    Serial.print(GetStateString());
+    Serial.print(BufferToString(inBuf));
+    if (outputChanged){
+        Serial.print("  ==>  ");
+        Serial.print(BufferToString(outBuf));
+    }
+    Serial.println();
 }
 
 inline void SendKeysToHost (uint8_t *buf)
@@ -172,19 +262,37 @@ bool operator==(const RichKey& lhs, const RichKey& rhs)
         && lhs.flags == rhs.flags;
 }
 
+String RichKeyToString(RichKey key) {
+    String modStr = ModifiersToString(key.mods);
+    String keyStr = KeyToString(key.key);
+    return modStr + keyStr;
+}
+
 void Log(String text){
     Serial.println(text);
 }
 
 void PressKey(RichKey key){
+    Log("pressing Key " + RichKeyToString(key));
     uint8_t buf[8];
     CopyBuf(OutputBuffer, buf);
     MergeKeyIntoBuffer(key, buf);
-    SendState(buf);
-    delay(1);
+    TransitionToState(buf);
 }
 
 void PressAndReleaseKey(RichKey key){
+    uint8_t current_buf[8];
+    CopyBuf(OutputBuffer, current_buf);
+
     PressKey(key);
-    SendState(OutputBuffer);
+    TransitionToState(current_buf);
 }
+
+
+bool IsKeyPressedInBuffer(uint8_t key, uint8_t buf[8]) {
+    for (uint8_t i=2; i<8; i++) {
+        if (buf[i] == key) return true;
+    }
+    return false;
+}
+

@@ -157,9 +157,11 @@ typedef RichKey(*KeyMap)(uint8_t *buf, uint8_t i);
 // modal_keys.ino functions
 // *******************************************************************************************
 bool operator==(const RichKey& lhs, const RichKey& rhs);
+extern String RichKeyToString(RichKey key);
 extern void Log(String text);
 extern void PressKey(RichKey key);
 extern void PressAndReleaseKey(RichKey key);
+extern bool IsKeyPressedInBuffer(uint8_t key, uint8_t buf[8]);
 
 // *******************************************************************************************
 // keymap.cpp functions
