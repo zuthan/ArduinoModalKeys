@@ -30,10 +30,8 @@ typedef enum
     Normal,
     RemnantKeys,
     LeftAlt,
-    LeftFunc,
     LeftMod,
     RightAlt,
-    RightFunc,
     RightMod,
     AltTab,
     WindowSnap,
@@ -50,52 +48,55 @@ typedef enum {
     Right
 } Side;
 
+typedef enum {
+    Clean = 0,
+    Used
+} ModeState;
+
 // ****************************************************************************
 // Function Declarations
 // ****************************************************************************
 
 // helpers
-void loadOSMode();
-void setOSMode(OSMode osMode);
-void setMode(Mode mode, uint8_t *buf);
-RichKey enterMode(Mode mode, uint8_t *buf, uint8_t i);
-bool numKeysPressed(uint8_t *buf);
-bool numModsPressed(uint8_t *buf);
-bool numKeysOrModsPressed(uint8_t *buf);
-RichKey AltTabKey(uint8_t *buf, Side side);
-bool mapModifier(uint8_t mod, Mode newMode, RichKey* out);
-RichKey sendKey(uint8_t keycode);
-RichKey sendModifiers(uint8_t mods);
-RichKey sendKeyCombo(uint8_t mods, uint8_t keycode);
-String GetOSModeString();
-String GetModeString();
-String GetLayoutString();
-
-// pure functions
-RichKey mapLeftFuncKey(uint8_t *buf, uint8_t i);
-RichKey mapRightFuncKey(uint8_t *buf, uint8_t i);
+void LoadOSMode();
+void SetOSMode(OSMode osMode);
+void SetMode(Mode mode, ModeState modeState);
+ControlCode EnterMode(Mode mode, ModeState modeState);
+ControlCode SendKey(uint8_t keycode, uint8_t outbuf[8]);
+ControlCode SendModifiers(uint8_t mods, uint8_t outbuf[8]);
+ControlCode SendKeyCombo(uint8_t mods, uint8_t keycode, uint8_t outbuf[8]);
+ControlCode InvalidKey();
+ControlCode MapKey(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+uint8_t NumKeysPressed(uint8_t buf[8]);
+uint8_t NumModsPressed(uint8_t buf[8]);
+uint8_t NumKeysOrModsPressed(uint8_t buf[8]);
+String GetOSModeString(OSMode osMode);
+String GetModeString(Mode mode);
+String GetModeStateString(ModeState modeState);
+String GetLayoutString(KeyboardLayout layout);
 
 // state changing methods
-RichKey Configuration_keymap(uint8_t *buf, uint8_t i);
+ControlCode Configuration_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 
-RichKey DoNothing_keymap(uint8_t *buf, uint8_t i);
-RichKey Normal_keymap(uint8_t *buf, uint8_t i);
-RichKey EntryPoint_keymap(uint8_t *buf, uint8_t i);
-RichKey LeftAltMode_keymap(uint8_t *buf, uint8_t i);
-RichKey LeftFuncMode_keymap(uint8_t *buf, uint8_t i);
-RichKey LeftModMode_keymap(uint8_t *buf, uint8_t i);
-RichKey RightAltMode_keymap(uint8_t *buf, uint8_t i);
-RichKey RightFuncMode_keymap(uint8_t *buf, uint8_t i);
-RichKey RightModMode_keymap(uint8_t *buf, uint8_t i);
-RichKey AltTab_keymap(uint8_t *buf, uint8_t i);
-RichKey WindowSnap_keymap(uint8_t *buf, uint8_t i);
-RichKey NumPad_keymap(uint8_t *buf, uint8_t i);
+ControlCode DoNothing_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode Normal_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode EntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode LeftAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode LeftModMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode RightAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode RightModMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode AltTab_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode WindowSnap_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode NumPad_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 
-RichKey GamingEntryPoint_keymap(uint8_t *buf, uint8_t i);
-RichKey GamingBacktick_keymap(uint8_t *buf, uint8_t i);
-RichKey GamingTab_keymap(uint8_t *buf, uint8_t i);
-RichKey GamingCapsLock_keymap(uint8_t *buf, uint8_t i);
-RichKey GamingSpace_keymap(uint8_t *buf, uint8_t i);
+ControlCode GamingEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode GamingBacktick_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode GamingTab_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode GamingCapsLock_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode GamingSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+
+// state handling callbacks
+void HandleLastKeyReleased();
 
 // ****************************************************************************
 // Constants
@@ -123,10 +124,8 @@ const KeyMap KeyMaps[] = {
     &Normal_keymap,             /* Normal */
     &DoNothing_keymap,          /* RemnantKeys */
     &LeftAltMode_keymap,        /* LeftAlt */
-    &LeftFuncMode_keymap,       /* LeftFunc */
     &LeftModMode_keymap,        /* LeftMod */
     &RightAltMode_keymap,       /* RightAlt */
-    &RightFuncMode_keymap,      /* RightFunc */
     &RightModMode_keymap,       /* RightMod */
     &AltTab_keymap,             /* AltTab */
     &WindowSnap_keymap,         /* WindowSnap */
@@ -146,16 +145,16 @@ KeyboardLayout CurrentLayout = dvorak;
 Mode EntryPointMode = NoKeys;
 Mode CurrentMode = NoKeys;
 OSMode CurrentOSMode = Windows;
-bool ModeIsDirty = false;
+ModeState CurrentModeState = Clean;
 
 // ****************************************************************************
 // State Dependant Values
 // ****************************************************************************
 
-RichKey CapsLockKey() {
+uint8_t CapsLockMod() {
     switch(CurrentOSMode){
-        case Windows: return sendModifiers(LCtrl);
-        case OSX: return sendModifiers(LGui);
+        case Windows: return LCtrl;
+        case OSX: return LGui;
     }
 }
 
@@ -185,520 +184,525 @@ uint8_t WindowSnapModifierKeycode() {
 // Mode implementations
 // ****************************************************************************
 
-RichKey Configuration_keymap(uint8_t *buf, uint8_t i) {
+ControlCode Configuration_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
      // map modifier
-    if (i == 0) switch (buf[0]) {
+    if (i == 0) switch (inbuf[0]) {
         case LCtrl:
         case RCtrl:
-            setOSMode(Windows);
-            break;
+            SetOSMode(Windows);
+            return Continue;
         case LGui:
         case RGui:
-            setOSMode(OSX);
-            break;
+            SetOSMode(OSX);
+            return Continue;
     }
 
      // map key
-    if (i >= 2) switch (buf[i]){
-        case _Escape: return NoKey;
+    if (i >= 2) switch (inbuf[i]){
+        case _Escape: return Continue;
         case _F1:
-            ModeIsDirty = true;
+            CurrentModeState = Used;
             CurrentLayout = qwerty;
             EntryPointMode = NoKeys;
-            break;
+            return Continue;
         case _F2:
-            ModeIsDirty = true;
+            CurrentModeState = Used;
             CurrentLayout = dvorak;
             EntryPointMode = NoKeys;
-            break;
+            return Continue;
         case _F3:
-            ModeIsDirty = true;
+            CurrentModeState = Used;
             CurrentLayout = qwerty;
             EntryPointMode = GamingNoKeys;
-            break;
+            return Continue;
     }
-
-    return NoKey;
 }
 
-RichKey EntryPoint_keymap(uint8_t *buf, uint8_t i) {
+ControlCode EntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // Modifier entry points
-    switch (buf[0]){
-        case LAlt: return enterMode(LeftAlt, buf, i);
-        case RAlt: return enterMode(RightAlt, buf, i);
+    switch (inbuf[0]){
+        case LAlt: return EnterMode(LeftAlt, Clean);
+        case RAlt: return EnterMode(RightAlt, Clean);
     }
 
     // normal key entry points
-    switch (buf[2]){
-        case _Escape:   return enterMode(Configuration, buf, i);
+    switch (inbuf[2]){
+        case _Escape:   return EnterMode(Configuration, Clean);
     }
 
     // No special behavior activated. Apply normal keyboard behavior.
-    return enterMode(Normal, buf, i);
+    return EnterMode(Normal, Used);
 }
 
 // a keymap that always does nothing
-RichKey DoNothing_keymap(uint8_t *buf, uint8_t i){
-    return NoKey;
+ControlCode DoNothing_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+    return InvalidKey();
 }
 
-RichKey mapNormalKeyToCurrentLayout(uint8_t *buf, uint8_t i) {
+ControlCode mapNormalKeyToCurrentLayout(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map modifier
-    if (i == 0){
-        return (RichKey){ buf[0], 0 };
+    if (i == 0) {
+        return SendModifiers(inbuf[0], outbuf);
     }
     // map key
-    else {
-        uint8_t inkey = buf[i];
+    if (i >= 2) {
+        uint8_t inkey = inbuf[i];
         switch (inkey){
-            case _CapsLock:         return CapsLockKey();
+            case _CapsLock:         return SendModifiers(CapsLockMod(), outbuf);
         }
         // lookup key for current keyboard layout
         if (inkey >= _A && inkey <= _CapsLock){
             uint8_t outkey = Keymap[CurrentLayout][inkey-4];
-            return sendKey(outkey);
+            return SendKey(outkey, outbuf);
         }
 
-        return sendKey(inkey);
+        return SendKey(inkey, outbuf);
     }
 }
 
 // the keymap that just maps the key to the current keyboard layout
-RichKey Normal_keymap(uint8_t *buf, uint8_t i) {
-    return mapNormalKeyToCurrentLayout(buf, i);
+ControlCode Normal_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+    return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
 }
 
-bool mapLAltModifier(uint8_t key, RichKey* out) {
-    switch (key){
-        // func mode modifiers
-        case _Q:             return mapModifier(LShift, LeftFunc, out);
-        case _W:             return mapModifier(LAlt, LeftFunc, out);
-        case _E:             return mapModifier(LCtrl, LeftFunc, out);
-        case _R:             return mapModifier(LGui, LeftFunc, out);
-
+ControlCode LeftAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+    // map modifier
+    if (i == 0) switch (inbuf[i]) {
+        case LAlt:           return Continue;
+    }
+    // map 1st key
+    if (i == 2) switch (inbuf[i]) {
         // normal mode modifiers
-        case _A:             return mapModifier(LShift, LeftMod, out);
-        case _S:             return mapModifier(LAlt, LeftMod, out);
-        case _D:             return mapModifier(LCtrl, LeftMod, out);
-        case _F:             return mapModifier(LGui, LeftMod, out);
+        case _A:             return EnterMode(LeftMod, Used);
+        case _S:             return EnterMode(LeftMod, Used);
+        case _D:             return EnterMode(LeftMod, Used);
+        case _F:             return EnterMode(LeftMod, Used);
+        // map secondary modifier
+        case _X:             return EnterMode(NumPad, Used);
+        case _C:             return EnterMode(WindowSnap, Used);
     }
-    return false;
+    // map any key
+    if (i >= 2) switch (inbuf[i]) {
+        // alt mode modifiers
+        case _Q:             return SendModifiers(LShift, outbuf);
+        case _W:             return SendModifiers(LAlt, outbuf);
+        case _E:             return SendModifiers(LCtrl, outbuf);
+        case _R:             return SendModifiers(LGui, outbuf);
+
+        // Left Hand keys
+        case _Tab:           return EnterMode(AltTab, Used);
+        case _1:             return SendKey(_F1, outbuf);
+        case _2:             return SendKey(_F2, outbuf);
+        case _3:             return SendKey(_F3, outbuf);
+        case _4:             return SendKey(_F4, outbuf);
+        case _5:             return SendKey(_F5, outbuf);
+        case _6:             return SendKey(_F6, outbuf);
+
+        // Right Hand keys
+        case _Y:             return SendKey(_Escape, outbuf);
+        case _U:             return SendKey(_Home, outbuf);
+        case _I:             return SendKey(_PgUp, outbuf);
+        case _O:             return SendKey(_PgDn, outbuf);
+        case _P:             return SendKey(_End, outbuf);
+        case _LeftBracket:   return SendKey(_Enter, outbuf);
+        case _RightBracket:  return SendKey(_Menu, outbuf);
+        case _Backslash:     return EnterMode(AltTab, Used);
+        case _Backspace:     return SendKey(_CapsLock, outbuf);
+        case _H:             return SendKey(_Backspace, outbuf);
+        case _J:             return SendKey(_Left, outbuf);
+        case _K:             return SendKey(_Up, outbuf);
+        case _L:             return SendKey(_Down, outbuf);
+        case _Semicolon:     return SendKey(_Right, outbuf);
+        case _Apostrophe:    return SendKey(_Delete, outbuf);
+        case _7:             return SendKey(_F7, outbuf);
+        case _8:             return SendKey(_F8, outbuf);
+        case _9:             return SendKey(_F9, outbuf);
+        case _0:             return SendKey(_F10, outbuf);
+        case _Dash:          return SendKey(_F11, outbuf);
+        case _Equals:        return SendKey(_F12, outbuf);
+    }
+    // all other keys
+    return EnterMode(Normal, Used);
 }
 
-RichKey LeftAltMode_keymap(uint8_t *buf, uint8_t i) {
-    RichKey funcKey = mapLeftFuncKey(buf, 2);
+ControlCode LeftModMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+    // return to LeftAlt Mode when LAlt is the only key pressed
+    if (inbuf[0] == LAlt && NumKeysOrModsPressed(inbuf) == 1)
+        return EnterMode(LeftAlt, Used);
+
     // map modifier
-    if (i == 0) switch (buf[i]) {
-        case LAlt:
-            if (numKeysPressed(buf) == 0)
-                return NoKey; // don't press LAlt by default - use it as a custom modifier
-            else if (funcKey == NoKey){ // a non-func-mode key was pressed first
-                // press Alt key slightly earlier than other keys
-                PressKey((RichKey){ LAlt, 0 });
-            }
+    if (i == 0) switch (inbuf[i]) {
+        case LAlt:           return Continue;
     }
-    // map secondary modifier
-    else if (i == 2) switch (buf[i]) {
-        case _X:           return enterMode(NumPad, buf, i);
-        case _C:           return enterMode(WindowSnap, buf, i);
-    }
-
-    // map key
-    if (funcKey == NoKey){ // a non-func-mode key was pressed first
-        // Switch to Normal keyboard where Alt key behaves like Alt key
-        return enterMode(Normal, buf, i);
-    }
-    else {
-        return enterMode(LeftFunc, buf, i);
-    }
-}
-
-RichKey mapLeftFuncKey(uint8_t *buf, uint8_t i) {
-    RichKey out;
-    // map modifier
-    if (i == 0) switch (buf[0]){
-        case LAlt:
-            return NoKey;
-    }
-    // map key
-    else if (mapLAltModifier(buf[i], &out))
-        return out;
-    else switch (buf[i]){
-        // --- Left Hand ---
-        case _Tab:           return AltTabKey(buf, Left);
-        case _1:             return sendKey(_F1);
-        case _2:             return sendKey(_F2);
-        case _3:             return sendKey(_F3);
-        case _4:             return sendKey(_F4);
-        case _5:             return sendKey(_F5);
-        case _6:             return sendKey(_F6);
-
-        case _X:             return enterMode(NumPad, buf, i);
-        case _C:             return enterMode(WindowSnap, buf, i);
-
-        // --- Right Hand ---
-        case _Y:             return sendKey(_Escape);
-        case _U:             return sendKey(_Home);
-        case _I:             return sendKey(_PgUp);
-        case _O:             return sendKey(_PgDn);
-        case _P:             return sendKey(_End);
-        case _LeftBracket:   return sendKey(_Enter);
-        case _RightBracket:  return sendKey(_Menu);
-        case _Backslash:     return AltTabKey(buf, Left);
-        case _Backspace:     return sendKey(_CapsLock);
-        case _H:             return sendKey(_Backspace);
-        case _J:             return sendKey(_Left);
-        case _K:             return sendKey(_Up);
-        case _L:             return sendKey(_Down);
-        case _Semicolon:     return sendKey(_Right);
-        case _Apostrophe:    return sendKey(_Delete);
-        case _7:             return sendKey(_F7);
-        case _8:             return sendKey(_F8);
-        case _9:             return sendKey(_F9);
-        case _0:             return sendKey(_F10);
-        case _Dash:          return sendKey(_F11);
-        case _Equals:        return sendKey(_F12);
-    }
-    return NoKey;
-}
-
-RichKey LeftFuncMode_keymap(uint8_t *buf, uint8_t i) {
-    return mapLeftFuncKey(buf, i);
-}
-
-RichKey LeftModMode_keymap(uint8_t *buf, uint8_t i) {
-    RichKey out;
-    // map modifier
-    if (i == 0) switch (buf[0]){
-        case LAlt:
-            if (numKeysPressed(buf) == 0)
-                CurrentMode = LeftFunc;
-            return NoKey;
-    }
-    // map key
-    else if (mapLAltModifier(buf[i], &out))
-        return out;
-    return mapNormalKeyToCurrentLayout(buf, i);
-}
-
-bool mapRAltModifier(uint8_t key, RichKey* out) {
-    switch (key){
-        // func mode modifiers
-        case _U:             return mapModifier(RGui, RightFunc, out);
-        case _I:             return mapModifier(RCtrl, RightFunc, out);
-        case _O:             return mapModifier(RAlt, RightFunc, out);
-        case _P:             return mapModifier(RShift, RightFunc, out);
-
+    // map any key
+    if (i >= 2) switch (inbuf[i]) {
         // normal mode modifiers
-        case _J:             return mapModifier(RGui, RightMod, out);
-        case _K:             return mapModifier(RCtrl, RightMod, out);
-        case _L:             return mapModifier(RAlt, RightMod, out);
-        case _Semicolon:     return mapModifier(RShift, RightMod, out);
+        case _A:             return SendModifiers(LShift, outbuf);
+        case _S:             return SendModifiers(LAlt, outbuf);
+        case _D:             return SendModifiers(LCtrl, outbuf);
+        case _F:             return SendModifiers(LGui, outbuf);
     }
-    return false;
+    // all other keys
+    return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
 }
 
-RichKey RightAltMode_keymap(uint8_t *buf, uint8_t i) {
-    RichKey funcKey = mapRightFuncKey(buf, 2);
+ControlCode RightAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map modifier
-    if (i == 0) switch (buf[0]){
-        case RAlt:
-            if (numKeysPressed(buf) == 0)
-                return NoKey; // don't press RAlt by default - use it as a custom modifier
-            else if (funcKey == NoKey){ // a non-func-mode key was pressed first
-                // press Alt key slightly earlier than other keys
-                PressKey((RichKey){ RAlt, 0 });
-            }
+    if (i == 0) switch (inbuf[i]) {
+        case RAlt:           return Continue;
     }
-    if (funcKey == NoKey) // a non-func-mode key was pressed first
-        // Switch to Normal keyboard where Alt key behaves like Alt key
-        return enterMode(Normal, buf, i);
-    else
-        return enterMode(RightFunc, buf, i);
+    // map first key
+    if (i == 2) switch (inbuf[i]) {
+        // normal mode modifiers
+        case _J:             return EnterMode(RightMod, Used);
+        case _K:             return EnterMode(RightMod, Used);
+        case _L:             return EnterMode(RightMod, Used);
+        case _Semicolon:     return EnterMode(RightMod, Used);
+    }
+    // map any key
+    if (i >= 2) switch (inbuf[i]) {
+         // alt mode modifiers
+        case _U:             return SendModifiers(RGui, outbuf);
+        case _I:             return SendModifiers(RCtrl, outbuf);
+        case _O:             return SendModifiers(RAlt, outbuf);
+        case _P:             return SendModifiers(RShift, outbuf);
+        // Left Hand keys
+        case _Tab:           return EnterMode(AltTab, Used);
+        case _1:             return SendKey(_F1, outbuf);
+        case _2:             return SendKey(_F2, outbuf);
+        case _3:             return SendKey(_F3, outbuf);
+        case _4:             return SendKey(_F4, outbuf);
+        case _5:             return SendKey(_F5, outbuf);
+        case _6:             return SendKey(_F6, outbuf);
+        // Right Hand keys
+        case _Backslash:     return EnterMode(AltTab, Used);
+    }
+    // all other keys
+    return EnterMode(Normal, Used);
 }
 
-RichKey mapRightFuncKey(uint8_t *buf, uint8_t i) {
-    RichKey out;
+ControlCode RightModMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+    // return to RightAlt Mode when RAlt is the only key pressed
+    if (inbuf[0] == RAlt && NumKeysOrModsPressed(inbuf) == 1)
+        return EnterMode(RightAlt, Used);
+
     // map modifier
-    if (i == 0) switch (buf[0]){
-        case RAlt:
-            return NoKey;
+    if (i == 0) switch (inbuf[0]){
+        case RAlt:           return Continue;
     }
-    // map key
-    else if (mapRAltModifier(buf[i], &out))
-        return out;
-    else switch (buf[i]){
-        // AltTab
-        case _Tab:           return AltTabKey(buf, Right);
-        case _Backslash:     return AltTabKey(buf, Right);
-        case _1:             return sendKey(_F1);
-        case _2:             return sendKey(_F2);
-        case _3:             return sendKey(_F3);
-        case _4:             return sendKey(_F4);
-        case _5:             return sendKey(_F5);
-        case _6:             return sendKey(_F6);
+    // map any key
+    if (i >= 2) switch (inbuf[i]) {
+        // normal mode modifiers
+        case _J:             return SendModifiers(RGui, outbuf);
+        case _K:             return SendModifiers(RCtrl, outbuf);
+        case _L:             return SendModifiers(RAlt, outbuf);
+        case _Semicolon:     return SendModifiers(RShift, outbuf);
     }
-    return NoKey;
+    // all other keys
+    return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
 }
 
-RichKey RightFuncMode_keymap(uint8_t *buf, uint8_t i) {
-    return mapRightFuncKey(buf, i);
-}
-
-RichKey RightModMode_keymap(uint8_t *buf, uint8_t i) {
-    RichKey out;
-    // map modifier
-    if (i == 0) switch (buf[0]){
-        case RAlt:
-            if (numKeysPressed(buf) == 0)
-                CurrentMode = RightFunc;
-            return NoKey;
-    }
-    // map key
-    else if (mapRAltModifier(buf[i], &out))
-        return out;
-    return mapNormalKeyToCurrentLayout(buf, i);
-}
-
-RichKey AltTab_keymap(uint8_t *buf, uint8_t i) {
+ControlCode AltTab_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map modifier
     if (i == 0) {
         uint8_t Mods = 0;
-        if (buf[0] & LAlt) Mods |= AppSwitchModifierKeycode(Left);
-        if (buf[0] & RAlt) Mods |= AppSwitchModifierKeycode(Right);
-        if (buf[0] & LShift) Mods |= LShift;
-        if (buf[0] & RShift) Mods |= RShift;
-        return sendModifiers(Mods);
+        if (inbuf[0] & LAlt) Mods |= AppSwitchModifierKeycode(Left);
+        if (inbuf[0] & RAlt) Mods |= AppSwitchModifierKeycode(Right);
+        if (inbuf[0] & LShift) Mods |= LShift;
+        if (inbuf[0] & RShift) Mods |= RShift;
+        return SendModifiers(Mods, outbuf);
     }
-    // map key
-    else switch (buf[i]){
-        // AltTab
-        case _Tab:
-        case _Backslash:
-            return sendKey(_Tab);
-        case _Q:
-            return sendModifiers(LShift);
-        case _P:
-            return sendModifiers(RShift);
+    // map any key
+    if (i >= 2) switch (inbuf[i]) {
+        // Tab
+        case _Tab:           return SendKey(_Tab, outbuf);
+        case _Backslash:     return SendKey(_Tab, outbuf);
+        // Shift
+        case _Q:             return SendModifiers(LShift, outbuf);
+        case _P:             return SendModifiers(RShift, outbuf);
+        // arrow keys
+        case _J:             return SendKey(_Left, outbuf);
+        case _K:             return SendKey(_Up, outbuf);
+        case _L:             return SendKey(_Down, outbuf);
+        case _Semicolon:     return SendKey(_Right, outbuf);
     }
-    return NoKey;
+    // all other keys
+    return InvalidKey();
 }
 
-RichKey WindowSnap_keymap(uint8_t *buf, uint8_t i) {
+ControlCode WindowSnap_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // exit condition: first key pressed is no longer _C
-    if (buf[2] != _C) return enterMode(NoKeys, buf, i);
+    if (inbuf[2] != _C) return EnterMode(NoKeys, Used);
 
     // map modifier
-    if (i == 0) {
-        return NoKey;
+    if (i == 0) switch (inbuf[i]) {
+        case LAlt:         return Continue;
     }
     // map first key
-    else if (i == 2) { // must be _C because of exit guard
-        return (RichKey){ WindowSnapModifierKeycode(), 0, _CustomModifier };
+    if (i == 2) switch (inbuf[i]) { // must be _C because of exit guard
+        default:           return SendModifiers(WindowSnapModifierKeycode(), outbuf);
     }
     // map subsequent keys
-    else {
-        return mapNormalKeyToCurrentLayout(buf, i);
+    if (i > 2) switch (inbuf[i]) {
+        default:           return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
     }
 }
 
-RichKey NumPad_keymap(uint8_t *buf, uint8_t i) {
+ControlCode NumPad_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // exit condition: first key pressed is no longer _X
-    if (buf[2] != _X) return enterMode(NoKeys, buf, i);
+    if (inbuf[2] != _X)             return EnterMode(NoKeys, Used);
 
     // map modifier
-    if (i == 0) {
-        return NoKey;
+    if (i == 0) switch (inbuf[i]) {
+        case LAlt:                  return Continue;
+        default:                    return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
     }
     // map first key
-    else if (i == 2) { // must be _X because of exit guard
-        return CustomModifierKey;
+    if (i == 2) switch (inbuf[i]) { // must be _X because of exit guard
+        default:                    return Continue;
     }
     // map subsequent keys
-    else switch (buf[i]){
-        case _7:                    return sendKey(_Numpad7);
-        case _8:                    return sendKey(_Numpad8);
-        case _9:                    return sendKey(_Numpad9);
-        case _0:                    return sendKey(_NumpadTimes);
-        case _U:                    return sendKey(_Numpad4);
-        case _I:                    return sendKey(_Numpad5);
-        case _O:                    return sendKey(_Numpad6);
-        case _P:                    return sendKey(_NumpadMinus);
-        case _LeftBracket:          return sendKey(_NumpadEnter);
-        case _RightBracket:         return sendKey(_NumLock);
-        case _H:                    return sendKey(_Backspace);
-        case _J:                    return sendKey(_Numpad1);
-        case _K:                    return sendKey(_Numpad2);
-        case _L:                    return sendKey(_Numpad3);
-        case _Semicolon:            return sendKey(_NumpadPlus);
-        case _Apostrophe:           return sendKeyCombo(LShift, _Dash); // Underscore
-        case _N:                    return sendKeyCombo(LShift, _Semicolon); // Colon
-        case _M:                    return sendKey(_Numpad0);
-        case _Comma:                return sendKey(_Comma);
-        case _Fullstop:             return sendKey(_Fullstop);
-        case _ForwardSlash:         return sendKey(_NumpadDivide);
-        case _Space:                return sendKey(_Space);
-        case _Enter:                return sendKey(_Enter);
+    if (i > 2)  switch (inbuf[i]) {
+        case _7:                    return SendKey(_Numpad7, outbuf);
+        case _8:                    return SendKey(_Numpad8, outbuf);
+        case _9:                    return SendKey(_Numpad9, outbuf);
+        case _0:                    return SendKey(_NumpadTimes, outbuf);
+        case _U:                    return SendKey(_Numpad4, outbuf);
+        case _I:                    return SendKey(_Numpad5, outbuf);
+        case _O:                    return SendKey(_Numpad6, outbuf);
+        case _P:                    return SendKey(_NumpadMinus, outbuf);
+        case _LeftBracket:          return SendKey(_NumpadEnter, outbuf);
+        case _RightBracket:         return SendKey(_NumLock, outbuf);
+        case _H:                    return SendKey(_Backspace, outbuf);
+        case _J:                    return SendKey(_Numpad1, outbuf);
+        case _K:                    return SendKey(_Numpad2, outbuf);
+        case _L:                    return SendKey(_Numpad3, outbuf);
+        case _Semicolon:            return SendKey(_NumpadPlus, outbuf);
+        case _Apostrophe:           return SendKeyCombo(LShift, _Dash, outbuf); // Underscore
+        case _N:                    return SendKeyCombo(LShift, _Semicolon, outbuf); // Colon
+        case _M:                    return SendKey(_Numpad0, outbuf);
+        case _Comma:                return SendKey(_Comma, outbuf);
+        case _Fullstop:             return SendKey(_Fullstop, outbuf);
+        case _ForwardSlash:         return SendKey(_NumpadDivide, outbuf);
+        case _Space:                return SendKey(_Space, outbuf);
+        case _Enter:                return SendKey(_Enter, outbuf);
     }
-    return NoKey;
+    // all other keys
+    return InvalidKey();
 }
 
 // ================== Gaming Mode ===================
 
-RichKey GamingEntryPoint_keymap(uint8_t *buf, uint8_t i) {
+ControlCode GamingEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map modifier
-    if (i == 0) switch (buf[0]) {
-        case LGui:        return sendKey(_Enter);
+    if (i == 0) switch (inbuf[0]) {
+        case LGui:        return SendKey(_Enter, outbuf);
     }
-    // map key
-    else if (i == 2) switch (buf[i]) {
-        case _Escape:     return enterMode(Configuration, buf, i);
-        case _Backtick:   return enterMode(GamingBacktick, buf, i);
-        case _Tab:        return enterMode(GamingTab, buf, i);
-        case _CapsLock:   return enterMode(GamingCapsLock, buf, i);
-        case _Space:      return enterMode(GamingSpace, buf, i);
+    // map first key
+    if (i == 2) switch (inbuf[i]) {
+        case _Escape:     return EnterMode(Configuration, Clean);
+        case _Backtick:   return EnterMode(GamingBacktick, Clean);
+        case _Tab:        return EnterMode(GamingTab, Clean);
+        case _CapsLock:   return EnterMode(GamingCapsLock, Clean);
+        case _Space:      return EnterMode(GamingSpace, Clean);
     }
-
-    // No special behavior activated. Apply normal keyboard behavior.
-    return mapNormalKeyToCurrentLayout(buf, i);
+    // all other keys
+    return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
 }
 
 
-RichKey GamingBacktick_keymap(uint8_t *buf, uint8_t i) {
+ControlCode GamingBacktick_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map modifier
-    if (i == 0) switch (buf[0]) {
+    if (i == 0) switch (inbuf[0]) {
 
     }
-    // map key
-    else switch (buf[i]) {
-        case _Backtick:      return NoKey;
-        case _Space:         return sendModifiers(LCtrl);
+    // map any key
+    if (i >= 2) switch (inbuf[i]) {
+        case _Backtick:      return Continue;
+        case _Space:         return SendModifiers(LCtrl, outbuf);
         // backtick + row0 number ==> LH function key
-        case _1:             return sendKey(_F1);
-        case _2:             return sendKey(_F2);
-        case _3:             return sendKey(_F3);
-        case _4:             return sendKey(_F4);
-        case _5:             return sendKey(_F5);
-        case _6:             return sendKey(_F6);
+        case _1:             return SendKey(_F1, outbuf);
+        case _2:             return SendKey(_F2, outbuf);
+        case _3:             return SendKey(_F3, outbuf);
+        case _4:             return SendKey(_F4, outbuf);
+        case _5:             return SendKey(_F5, outbuf);
+        case _6:             return SendKey(_F6, outbuf);
     }
-    return NoKey;
+    // all other keys
+    return InvalidKey();
 }
 
-RichKey GamingTab_keymap(uint8_t *buf, uint8_t i) {
+ControlCode GamingTab_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
      // map modifier
-    if (i == 0) switch (buf[0]) {
+    if (i == 0) switch (inbuf[0]) {
 
     }
-    // map key
-    else switch (buf[i]){
-        case _Tab:           return NoKey;
-        case _Space:         return sendModifiers(LCtrl);
+    // map any key
+    if (i >= 2) switch (inbuf[i]){
+        case _Tab:           return Continue;
+        case _Space:         return SendModifiers(LCtrl, outbuf);
         // Tab + row0 number ==> shift + LH number
-        case _1:             return sendKeyCombo(LShift, _1);
-        case _2:             return sendKeyCombo(LShift, _2);
-        case _3:             return sendKeyCombo(LShift, _3);
-        case _4:             return sendKeyCombo(LShift, _4);
-        case _5:             return sendKeyCombo(LShift, _5);
-        case _6:             return sendKeyCombo(LShift, _6);
+        case _1:             return SendKeyCombo(LShift, _1, outbuf);
+        case _2:             return SendKeyCombo(LShift, _2, outbuf);
+        case _3:             return SendKeyCombo(LShift, _3, outbuf);
+        case _4:             return SendKeyCombo(LShift, _4, outbuf);
+        case _5:             return SendKeyCombo(LShift, _5, outbuf);
+        case _6:             return SendKeyCombo(LShift, _6, outbuf);
         // Tab + row1 letter ==> shift + RH number
-        case _Q:             return sendKeyCombo(LShift, _6);
-        case _W:             return sendKeyCombo(LShift, _7);
-        case _E:             return sendKeyCombo(LShift, _8);
-        case _R:             return sendKeyCombo(LShift, _9);
-        case _T:             return sendKeyCombo(LShift, _0);
+        case _Q:             return SendKeyCombo(LShift, _6, outbuf);
+        case _W:             return SendKeyCombo(LShift, _7, outbuf);
+        case _E:             return SendKeyCombo(LShift, _8, outbuf);
+        case _R:             return SendKeyCombo(LShift, _9, outbuf);
+        case _T:             return SendKeyCombo(LShift, _0, outbuf);
     }
-    return mapNormalKeyToCurrentLayout(buf, i);
+    // all other keys
+    return InvalidKey();
 }
 
 
-RichKey GamingCapsLock_keymap(uint8_t *buf, uint8_t i) {
+ControlCode GamingCapsLock_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
      // map modifier
-    if (i == 0) switch (buf[0]) {
+    if (i == 0) switch (inbuf[0]) {
 
     }
-    // map key
-    else switch (buf[i]){
-        case _CapsLock:      return NoKey;
-        case _Space:         return sendModifiers(LCtrl);
+    // map any key
+    if (i >= 2) switch (inbuf[i]){
+        case _CapsLock:      return Continue;
+        case _Space:         return SendModifiers(LCtrl, outbuf);
         // CapsLock + row1 letter ==> RH number
-        case _Q:             return sendKey(_6);
-        case _W:             return sendKey(_7);
-        case _E:             return sendKey(_8);
-        case _R:             return sendKey(_9);
-        case _T:             return sendKey(_0);
+        case _Q:             return SendKey(_6, outbuf);
+        case _W:             return SendKey(_7, outbuf);
+        case _E:             return SendKey(_8, outbuf);
+        case _R:             return SendKey(_9, outbuf);
+        case _T:             return SendKey(_0, outbuf);
     }
-    return mapNormalKeyToCurrentLayout(buf, i);
+    // all other keys
+    return InvalidKey();
 }
 
-RichKey GamingSpace_keymap(uint8_t *buf, uint8_t i) {
+ControlCode GamingSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map modifier
-    if (i == 0) switch (buf[0]) {
+    if (i == 0) switch (inbuf[0]) {
         // Space + Shift ==> RH function key (F7)
-        case LShift:       return sendKey(_F7);
-        case LAlt:         return sendKey(_Space);
+        case LShift:       return SendKey(_F7, outbuf);
+        case LAlt:         return SendKey(_Space, outbuf);
     }
-    // map key
-    else switch (buf[i]){
-        case _Space:         return NoKey;
-        case _Backtick:      return enterMode(GamingBacktick, buf, i);
-        case _Tab:           return enterMode(GamingTab, buf, i);
-        case _CapsLock:      return enterMode(GamingCapsLock, buf, i);
+    // map any key
+    if (i >= 2) switch (inbuf[i]){
+        case _Space:         return Continue;
+        case _Backtick:      return EnterMode(GamingBacktick, Used);
+        case _Tab:           return EnterMode(GamingTab, Used);
+        case _CapsLock:      return EnterMode(GamingCapsLock, Used);
          // Space + row0 number ==> ctrl + LH number
-        case _1:             return sendKeyCombo(LCtrl, _1);
-        case _2:             return sendKeyCombo(LCtrl, _2);
-        case _3:             return sendKeyCombo(LCtrl, _3);
-        case _4:             return sendKeyCombo(LCtrl, _4);
-        case _5:             return sendKeyCombo(LCtrl, _5);
-        case _6:             return sendKeyCombo(LCtrl, _6);
+        case _1:             return SendKeyCombo(LCtrl, _1, outbuf);
+        case _2:             return SendKeyCombo(LCtrl, _2, outbuf);
+        case _3:             return SendKeyCombo(LCtrl, _3, outbuf);
+        case _4:             return SendKeyCombo(LCtrl, _4, outbuf);
+        case _5:             return SendKeyCombo(LCtrl, _5, outbuf);
+        case _6:             return SendKeyCombo(LCtrl, _6, outbuf);
         // Space + R1,R2 letter keys ==> navigation keys
-        case _Q:             return sendKey(_Delete);
-        case _W:             return sendKey(_PgUp);
-        case _E:             return sendKey(_Up);
-        case _R:             return sendKey(_PgDn);
-        case _T:             return sendKey(_Backspace);
-        case _A:             return sendKey(_Home);
-        case _S:             return sendKey(_Left);
-        case _D:             return sendKey(_Down);
-        case _F:             return sendKey(_Right);
-        case _G:             return sendKey(_End);
+        case _Q:             return SendKey(_Delete, outbuf);
+        case _W:             return SendKey(_PgUp, outbuf);
+        case _E:             return SendKey(_Up, outbuf);
+        case _R:             return SendKey(_PgDn, outbuf);
+        case _T:             return SendKey(_Backspace, outbuf);
+        case _A:             return SendKey(_Home, outbuf);
+        case _S:             return SendKey(_Left, outbuf);
+        case _D:             return SendKey(_Down, outbuf);
+        case _F:             return SendKey(_Right, outbuf);
+        case _G:             return SendKey(_End, outbuf);
         // Space + R3 letter keys ==> RH function keys
-        case _Z:             return sendKey(_F8);
-        case _X:             return sendKey(_F9);
-        case _C:             return sendKey(_F10);
-        case _V:             return sendKey(_F11);
-        case _B:             return sendKey(_F12);
+        case _Z:             return SendKey(_F8, outbuf);
+        case _X:             return SendKey(_F9, outbuf);
+        case _C:             return SendKey(_F10, outbuf);
+        case _V:             return SendKey(_F11, outbuf);
+        case _B:             return SendKey(_F12, outbuf);
 
     }
-    return mapNormalKeyToCurrentLayout(buf, i);
+    // all other keys
+    return InvalidKey();
 }
 
+// ****************************************************************************
+// State Handling Callbacks
+// ****************************************************************************
+
+void HandleLastKeyReleased() {
+    // send normal keys on release of custom modifier if no other keys were pressed while it was held down
+    if (CurrentModeState == Clean) switch (CurrentMode) {
+        case Configuration: // send Escape on release
+            PressAndReleaseKey((RichKey){ 0, _Escape } );
+            break;
+        case LeftAlt: // send Left Alt on release
+            PressAndReleaseKey((RichKey){ LAlt, 0 } );
+            break;
+        case RightAlt: // send Right Alt on release
+            PressAndReleaseKey((RichKey){ RAlt, 0 } );
+            break;
+        case GamingBacktick: // send Backtick on release
+            PressAndReleaseKey((RichKey){ 0, _Backtick } );
+            break;
+        case GamingTab: // send Tab on release
+            PressAndReleaseKey((RichKey){ 0, _Tab } );
+            break;
+        case GamingSpace: // send Space on release
+            PressAndReleaseKey((RichKey){ 0, _Space } );
+            break;
+    }
+    SetMode(EntryPointMode, Clean);
+}
 
 // ****************************************************************************
 // Helper Functions
 // ****************************************************************************
 
-void loadOSMode() {
+void LoadOSMode() {
     OSMode osMode = Windows;
     EEPROM.get( OSModeSlot, osMode );
     CurrentOSMode = osMode;
 }
 
-void setOSMode(OSMode osMode) {
+void SetOSMode(OSMode osMode) {
     CurrentOSMode = osMode;
     EEPROM.put( OSModeSlot, osMode );
 }
 
-void setMode(Mode mode, uint8_t *buf) {
+void SetMode(Mode mode, ModeState modeState) {
     CurrentMode = mode;
-    ModeIsDirty = (numKeysOrModsPressed(buf) > 1);
+    CurrentModeState = modeState;
 }
 
-RichKey enterMode(Mode mode, uint8_t *buf, uint8_t i) {
-    setMode(mode, buf);
-    return MapKey(buf, i);
+ControlCode EnterMode(Mode mode, ModeState modeState) {
+    Log("entering Mode: " + GetModeString(mode));
+    SetMode(mode, modeState);
+    return Restart;
 }
 
-bool numKeysPressed(uint8_t *buf) {
+ControlCode SendKey(uint8_t keycode, uint8_t outbuf[8]) {
+    return SendKeyCombo(0, keycode, outbuf);
+}
+
+ControlCode SendModifiers(uint8_t mods, uint8_t outbuf[8]) {
+    return SendKeyCombo(mods, 0, outbuf);
+}
+
+ControlCode SendKeyCombo(uint8_t mods, uint8_t keycode, uint8_t outbuf[8]) {
+    CurrentModeState = Used;
+    MergeKeyIntoBuffer((RichKey){ mods, keycode }, outbuf);
+    return Continue;
+}
+
+ControlCode InvalidKey() {
+    CurrentModeState = Used;
+    return Stop;
+}
+
+// map key presses according to the current mode
+ControlCode MapKey(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+    return KeyMaps[CurrentMode](inbuf, i, outbuf);
+}
+
+uint8_t NumKeysPressed(uint8_t buf[8]) {
     uint8_t count = 0;
     for (uint8_t i=2; i<8; i++) {
         if (buf[i]) count++;
@@ -706,7 +710,7 @@ bool numKeysPressed(uint8_t *buf) {
     return count;
 }
 
-bool numModsPressed(uint8_t *buf) {
+uint8_t NumModsPressed(uint8_t buf[8]) {
     uint8_t bitset = buf[0];
     uint8_t count;
     for (count = 0; bitset; count++)
@@ -714,55 +718,26 @@ bool numModsPressed(uint8_t *buf) {
     return count;
 }
 
-bool numKeysOrModsPressed(uint8_t *buf) {
-    return numModsPressed(buf) + numKeysPressed(buf);
+uint8_t NumKeysOrModsPressed(uint8_t buf[8]) {
+    return NumModsPressed(buf) + NumKeysPressed(buf);
 }
 
-RichKey AltTabKey(uint8_t *buf, Side side) {
-    if (numKeysPressed(buf) == 1){
-        CurrentMode = AltTab;
-        return (RichKey){ AppSwitchModifierKeycode(side), _Tab };
-    } else return sendKey(_Tab);
-}
-
-bool mapModifier(uint8_t mod, Mode newMode, RichKey* out) {
-    *out = (RichKey){ mod, 0 };
-    CurrentMode = newMode;
-    return true;
-}
-
-RichKey sendKey(uint8_t keycode) {
-    return sendKeyCombo(0, keycode);
-}
-
-RichKey sendModifiers(uint8_t mods) {
-    return sendKeyCombo(mods, 0);
-}
-
-RichKey sendKeyCombo(uint8_t mods, uint8_t keycode) {
-    ModeIsDirty = true;
-    return (RichKey){ mods, keycode };
-}
-
-
-String GetOSModeString() {
-    switch (CurrentOSMode){
+String GetOSModeString(OSMode osMode) {
+    switch (osMode){
         case Windows:    return "Win";
         case OSX:        return "OSX";
     }
 }
 
-String GetModeString() {
-    switch (CurrentMode){
+String GetModeString(Mode mode) {
+    switch (mode){
         case Configuration:   return "Configuration";
         case NoKeys:          return "NoKeys";
         case Normal:          return "Normal";
         case RemnantKeys:     return "RemnantKeys";
         case LeftAlt:         return "LeftAlt";
-        case LeftFunc:        return "LeftFunc";
         case LeftMod:         return "LeftMod";
         case RightAlt:        return "RightAlt";
-        case RightFunc:       return "RightFunc";
         case RightMod:        return "RightMod";
         case AltTab:          return "AltTab";
         case WindowSnap:      return "WindowSnap";
@@ -776,16 +751,16 @@ String GetModeString() {
     }
 }
 
-String GetLayoutString() {
-    switch (CurrentLayout){
+String GetModeStateString(ModeState modeState) {
+    return (modeState == Used) ? "*" : "";
+}
+
+String GetLayoutString(KeyboardLayout layout) {
+    switch (layout){
         case qwerty:    return "QY";
         case dvorak:    return "DV";
         case colemak:   return "CM";
     }
-}
-
-String GetDirtyString() {
-    return ModeIsDirty ? "*" : "";
 }
 
 // ****************************************************************************
@@ -793,46 +768,31 @@ String GetDirtyString() {
 // ****************************************************************************
 
 void InitializeState() {
-    loadOSMode();
+    LoadOSMode();
 }
 
-void OnKeyboardEvent(uint8_t *prev_buf, uint8_t *cur_buf) {
-    // last key released
-    if (numKeysOrModsPressed(cur_buf) == 0) {
-        // send normal keys on release of custom modifier if no other keys were pressed while it was held down
-        if (ModeIsDirty == false) switch (CurrentMode) {
-            case Configuration: // send Escape on release
-                PressAndReleaseKey((RichKey){ 0, _Escape } );
-                break;
-            case LeftAlt: // send Left Alt on release
-                PressAndReleaseKey((RichKey){ LAlt, 0 } );
-                break;
-            case RightAlt: // send Right Alt on release
-                PressAndReleaseKey((RichKey){ RAlt, 0 } );
-                break;
-            case GamingBacktick: // send Backtick on release
-                PressAndReleaseKey((RichKey){ 0, _Backtick } );
-                break;
-            case GamingTab: // send Tab on release
-                PressAndReleaseKey((RichKey){ 0, _Tab } );
-                break;
-            case GamingSpace: // send Space on release
-                PressAndReleaseKey((RichKey){ 0, _Space } );
-                break;
+void TransformBuffer(uint8_t inbuf[8], uint8_t outbuf[8]) {
+    if (NumKeysOrModsPressed(inbuf) == 0) {
+        HandleLastKeyReleased();
+    } else {
+        int i = 0;
+        while (i < 8) {
+            if (i==1 || !inbuf[i]) {
+                i++;
+                continue;
+            }
+            switch (MapKey(inbuf, i, outbuf)) {
+                case Continue: i++; break;
+                case Stop: i=8; break;
+                case Restart: i=0; break;
+            }
         }
-        setMode(EntryPointMode, cur_buf);
-        return;
     }
 }
 
-// map key presses according to the current mode
-RichKey MapKey(uint8_t *buf, uint8_t i) {
-    return KeyMaps[CurrentMode](buf, i);
-}
-
-String GetStateString(){
+String GetStateString() {
     String spaces = "                              ";
-    String stateStr = "[" + GetOSModeString() + "." + GetLayoutString() + "." + GetModeString() + GetDirtyString() + "]";
+    String stateStr = "[" + GetOSModeString(CurrentOSMode) + "." + GetLayoutString(CurrentLayout) + "." + GetModeString(CurrentMode) + GetModeStateString(CurrentModeState) + "]";
     String neededSpaces = spaces.substring(0, 26 - stateStr.length());
 
     return stateStr + neededSpaces;

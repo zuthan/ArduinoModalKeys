@@ -12,10 +12,15 @@
 #include <EEPROM.h>
 #endif
 
+
+// *******************************************************************************************
+// Types
+// *******************************************************************************************
+
 class KbdRptParser : public KeyboardReportParser
 {
 protected:
-    virtual void Parse(HID *hid, bool is_rpt_id, uint8_t len, uint8_t *buf);
+    virtual void Parse(HID *hid, bool is_rpt_id, uint8_t len, uint8_t buf[8]);
 };
 
 // *******************************************************************************************
@@ -36,15 +41,12 @@ uint8_t OutputBuffer[8] = { 0 };
 // Parse
 // *******************************************************************************************
 
-void KbdRptParser::Parse(HID *hid, bool is_rpt_id, uint8_t len, uint8_t *buf) {
+void KbdRptParser::Parse(HID *hid, bool is_rpt_id, uint8_t len, uint8_t buf[8]) {
     // On error - return
     if (buf[2] == 1) return;
-    uint8_t outbuf[8] = { 0 };
 
-    OnKeyboardEvent(prevState.bInfo, buf);
-    for (uint8_t i=0; i<8; i++) if (i!=1 && buf[i]) {
-        MergeKeyIntoBuffer(MapKey(buf, i), outbuf);
-    }
+    uint8_t outbuf[8] = { 0 };
+    TransformBuffer(buf, outbuf);
 
     CopyBuf(buf, prevState.bInfo);
     CopyBuf(buf, InputBuffer);
@@ -104,7 +106,14 @@ void SendState(uint8_t buf[8]) {
     }
 }
 
-void MergeKeyIntoBuffer(RichKey key, uint8_t buf[8]){
+/* shared */ bool IsKeyPressedInBuffer(uint8_t key, uint8_t buf[8]) {
+    for (uint8_t i=2; i<8; i++) {
+        if (buf[i] == key) return true;
+    }
+    return false;
+}
+
+/* shared */ void MergeKeyIntoBuffer(RichKey key, uint8_t buf[8]) {
     buf[0] = buf[0] | key.mods;
     for (uint8_t i=2; i<8; i++) {
         if (buf[i] == key.key) return;
@@ -117,7 +126,7 @@ void MergeKeyIntoBuffer(RichKey key, uint8_t buf[8]){
 
 // Find keys present in both buf1 and buf2 and put them in outbuf.
 // If there are any keys in buf1 that are not in buf2, returns true; otherwise returns false.
-bool KeyIntersection(uint8_t buf1[8], uint8_t buf2[8], uint8_t *outbuf) {
+bool KeyIntersection(uint8_t buf1[8], uint8_t buf2[8], uint8_t outbuf[8]) {
     bool nonEmptyDiff = false;
     for (uint8_t i=2; i<8; i++) if (buf1[i]) {
         if (IsKeyPressedInBuffer(buf1[i], buf2))
@@ -130,26 +139,26 @@ bool KeyIntersection(uint8_t buf1[8], uint8_t buf2[8], uint8_t *outbuf) {
 
 // Find mods present in both buf1 and buf2 and put them in outbuf.
 // If there are any mods in buf1 that are not in buf2, returns true; otherwise returns false.
-bool ModIntersection(uint8_t buf1[8], uint8_t buf2[8], uint8_t *outbuf) {
+bool ModIntersection(uint8_t buf1[8], uint8_t buf2[8], uint8_t outbuf[8]) {
     outbuf[0] = buf1[0] & buf2[0];
     uint8_t diff = buf1[0] & ~buf2[0];
     // Log("mods diff: " + ModifiersToString(buf1[0]) + " - " + ModifiersToString(buf2[0]) + " = " + ModifiersToString(diff));
     return !!diff;
 }
 
-void CopyBuf(uint8_t *from_buf, uint8_t *to_buf) {
+void CopyBuf(uint8_t from_buf[8], uint8_t to_buf[8]) {
     for (uint8_t i=0; i<8; i++) {
         to_buf[i] = from_buf[i];
     }
 }
 
-void CopyKeys(uint8_t *from_buf, uint8_t *to_buf) {
+void CopyKeys(uint8_t from_buf[8], uint8_t to_buf[8]) {
     for (uint8_t i=2; i<8; i++) {
         to_buf[i] = from_buf[i];
     }
 }
 
-bool EqualBuffers(uint8_t *buf1, uint8_t *buf2) {
+bool EqualBuffers(uint8_t buf1[8], uint8_t buf2[8]) {
     bool equal = true;
     for (uint8_t i=0; i<8; i++) if (buf1[i] != buf2[i]) {
         equal = false;
@@ -157,7 +166,7 @@ bool EqualBuffers(uint8_t *buf1, uint8_t *buf2) {
     return equal;
 }
 
-bool EqualKeys(uint8_t *buf1, uint8_t *buf2) {
+bool EqualKeys(uint8_t buf1[8], uint8_t buf2[8]) {
     bool equal = true;
     for (uint8_t i=2; i<8; i++) if (buf1[i] != buf2[i]) {
         equal = false;
@@ -201,6 +210,16 @@ String KeyToString(uint8_t key) {
     }
 }
 
+/* shared */ String RichKeyToString(RichKey key) {
+    String modStr = ModifiersToString(key.mods);
+    String keyStr = KeyToString(key.key);
+    return modStr + keyStr;
+}
+
+/* shared */ void Log(String text){
+    Serial.println(text);
+}
+
 String BufferToString(uint8_t buf[8]) {
     String out = "";
     out += ModifiersToString(buf[0]);
@@ -210,7 +229,7 @@ String BufferToString(uint8_t buf[8]) {
     return out;
 }
 
-void PrintState(uint8_t *inBuf, uint8_t *outBuf, bool outputChanged) {
+void PrintState(uint8_t inBuf[8], uint8_t outBuf[8], bool outputChanged) {
     Serial.print(GetStateString());
     Serial.print(BufferToString(inBuf));
     if (outputChanged){
@@ -220,7 +239,22 @@ void PrintState(uint8_t *inBuf, uint8_t *outBuf, bool outputChanged) {
     Serial.println();
 }
 
-inline void SendKeysToHost (uint8_t *buf)
+void PressKey(RichKey key){
+    uint8_t buf[8];
+    CopyBuf(OutputBuffer, buf);
+    MergeKeyIntoBuffer(key, buf);
+    TransitionToState(buf);
+}
+
+/* shared */ void PressAndReleaseKey(RichKey key){
+    uint8_t current_buf[8];
+    CopyBuf(OutputBuffer, current_buf);
+
+    PressKey(key);
+    TransitionToState(current_buf);
+}
+
+inline void SendKeysToHost (uint8_t buf[8])
 {
 #ifdef LEONARDO
     HID_SendReport(2,buf,8);
@@ -253,46 +287,12 @@ void loop()
 }
 
 // *******************************************************************************************
-// Shared Function Implementations
+// Operators
 // *******************************************************************************************
-bool operator==(const RichKey& lhs, const RichKey& rhs)
+
+/* shared */ bool operator==(const RichKey& lhs, const RichKey& rhs)
 {
     return lhs.mods == rhs.mods
         && lhs.key == rhs.key
         && lhs.flags == rhs.flags;
 }
-
-String RichKeyToString(RichKey key) {
-    String modStr = ModifiersToString(key.mods);
-    String keyStr = KeyToString(key.key);
-    return modStr + keyStr;
-}
-
-void Log(String text){
-    Serial.println(text);
-}
-
-void PressKey(RichKey key){
-    Log("pressing Key " + RichKeyToString(key));
-    uint8_t buf[8];
-    CopyBuf(OutputBuffer, buf);
-    MergeKeyIntoBuffer(key, buf);
-    TransitionToState(buf);
-}
-
-void PressAndReleaseKey(RichKey key){
-    uint8_t current_buf[8];
-    CopyBuf(OutputBuffer, current_buf);
-
-    PressKey(key);
-    TransitionToState(current_buf);
-}
-
-
-bool IsKeyPressedInBuffer(uint8_t key, uint8_t buf[8]) {
-    for (uint8_t i=2; i<8; i++) {
-        if (buf[i] == key) return true;
-    }
-    return false;
-}
-

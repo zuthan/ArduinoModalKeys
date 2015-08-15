@@ -143,7 +143,17 @@
 #include <avr/pgmspace.h>
 #include <Arduino.h>
 
-// Mode definitions
+// ****************************************************************************
+// Type Declarations
+// ****************************************************************************
+
+typedef enum {
+    Continue = 0,
+    Stop,
+    Restart
+} ControlCode;
+
+
 struct RichKey {
     uint8_t mods;
     uint8_t key;
@@ -151,7 +161,7 @@ struct RichKey {
 };
 
 // typedef for functions that map keys to RichKeys
-typedef RichKey(*KeyMap)(uint8_t *buf, uint8_t i);
+typedef ControlCode(*KeyMap)(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 
 // *******************************************************************************************
 // modal_keys.ino functions
@@ -159,16 +169,16 @@ typedef RichKey(*KeyMap)(uint8_t *buf, uint8_t i);
 bool operator==(const RichKey& lhs, const RichKey& rhs);
 extern String RichKeyToString(RichKey key);
 extern void Log(String text);
-extern void PressKey(RichKey key);
 extern void PressAndReleaseKey(RichKey key);
 extern bool IsKeyPressedInBuffer(uint8_t key, uint8_t buf[8]);
+extern void MergeKeyIntoBuffer(RichKey key, uint8_t buf[8]);
+extern String BufferToString(uint8_t buf[8]);
 
 // *******************************************************************************************
 // keymap.cpp functions
 // *******************************************************************************************
 extern void InitializeState();
-extern void OnKeyboardEvent(uint8_t *prev_buf, uint8_t *cur_buf);
-extern RichKey MapKey(uint8_t *buf, uint8_t i);
+extern void TransformBuffer(uint8_t buf[8], uint8_t outbuf[8]);
 extern String GetStateString();
 
 #endif // __KEYMAP_H_
