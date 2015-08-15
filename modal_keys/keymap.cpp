@@ -499,7 +499,7 @@ ControlCode NumPad_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
 ControlCode GamingEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map modifier
     if (i == 0) switch (inbuf[0]) {
-        case LGui:        return SendKey(_Enter, outbuf);
+        case LGui:        return SendKey(_Backspace, outbuf);
     }
     // map first key
     if (i == 2) switch (inbuf[i]) {
@@ -581,9 +581,12 @@ ControlCode GamingCapsLock_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]
         case _E:             return SendKey(_8, outbuf);
         case _R:             return SendKey(_9, outbuf);
         case _T:             return SendKey(_0, outbuf);
-        // Capslock + row2 latters => special operations
+        // Capslock + row2 letter => misc operations
         case _A:             return SendKey(_NumpadMinus, outbuf);
         case _S:             return SendKey(_NumpadPlus, outbuf);
+        case _D:             return SendKey(_Pause, outbuf);
+        case _F:             return SendKey(_Insert, outbuf);
+        case _G:             return SendKey(_Delete, outbuf);
     }
     // all other keys
     return InvalidKey();
@@ -594,7 +597,10 @@ ControlCode GamingSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     if (i == 0) switch (inbuf[0]) {
         // Space + Shift ==> RH function key (F7)
         case LShift:       return SendKey(_F7, outbuf);
-        case LAlt:         return SendKey(_Space, outbuf);
+        // Space + Left Mods ==> []
+        case LCtrl:        return SendKey(_LeftBracket, outbuf);
+        case LGui:         return SendKey(_Backslash, outbuf);
+        case LAlt:         return SendKey(_RightBracket, outbuf);
     }
     // map any key
     if (i >= 2) switch (inbuf[i]){
@@ -620,7 +626,7 @@ ControlCode GamingSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _S:             return SendKey(_Left, outbuf);
         case _D:             return SendKey(_Down, outbuf);
         case _F:             return SendKey(_Right, outbuf);
-        case _G:             return SendKey(_Delete, outbuf);
+        case _G:             return SendKey(_Space, outbuf);
         // Space + R3 letter keys ==> RH function keys
         case _Z:             return SendKey(_F8, outbuf);
         case _X:             return SendKey(_F9, outbuf);
