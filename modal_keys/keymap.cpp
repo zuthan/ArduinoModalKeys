@@ -289,7 +289,7 @@ bool mapLAltModifier(uint8_t key, RichKey* out) {
 RichKey LeftAltMode_keymap(uint8_t *buf, uint8_t i) {
     RichKey funcKey = mapLeftFuncKey(buf, 2);
     // map modifier
-    if (i == 0) switch (buf[i]){
+    if (i == 0) switch (buf[i]) {
         case LAlt:
             if (numKeysPressed(buf) == 0)
                 return NoKey; // don't press LAlt by default - use it as a custom modifier
@@ -299,7 +299,7 @@ RichKey LeftAltMode_keymap(uint8_t *buf, uint8_t i) {
             }
     }
     // map secondary modifier
-    else if (i == 2) switch (buf[i]){
+    else if (i == 2) switch (buf[i]) {
         case _X:           return enterMode(NumPad, buf, i);
         case _C:           return enterMode(WindowSnap, buf, i);
     }
@@ -549,15 +549,14 @@ RichKey NumPad_keymap(uint8_t *buf, uint8_t i) {
 RichKey GamingEntryPoint_keymap(uint8_t *buf, uint8_t i) {
     // map modifier
     if (i == 0) switch (buf[0]) {
-        case LCtrl:       return sendKey(_Backspace);
         case LGui:        return sendKey(_Enter);
     }
     // map key
-    else switch (buf[i]) {
+    else if (i == 2) switch (buf[i]) {
         case _Escape:     return enterMode(Configuration, buf, i);
         case _Backtick:   return enterMode(GamingBacktick, buf, i);
         case _Tab:        return enterMode(GamingTab, buf, i);
-        case _CapsLock:   return sendKey(_Space);
+        case _CapsLock:   return enterMode(GamingCapsLock, buf, i);
         case _Space:      return enterMode(GamingSpace, buf, i);
     }
 
@@ -575,6 +574,7 @@ RichKey GamingBacktick_keymap(uint8_t *buf, uint8_t i) {
     else switch (buf[i]) {
         case _Backtick:      return NoKey;
         case _Space:         return sendModifiers(LCtrl);
+        // backtick + row0 number ==> LH function key
         case _1:             return sendKey(_F1);
         case _2:             return sendKey(_F2);
         case _3:             return sendKey(_F3);
@@ -594,6 +594,34 @@ RichKey GamingTab_keymap(uint8_t *buf, uint8_t i) {
     else switch (buf[i]){
         case _Tab:           return NoKey;
         case _Space:         return sendModifiers(LCtrl);
+        // Tab + row0 number ==> shift + LH number
+        case _1:             return sendKeyCombo(LShift, _1);
+        case _2:             return sendKeyCombo(LShift, _2);
+        case _3:             return sendKeyCombo(LShift, _3);
+        case _4:             return sendKeyCombo(LShift, _4);
+        case _5:             return sendKeyCombo(LShift, _5);
+        case _6:             return sendKeyCombo(LShift, _6);
+        // Tab + row1 letter ==> shift + RH number
+        case _Q:             return sendKeyCombo(LShift, _6);
+        case _W:             return sendKeyCombo(LShift, _7);
+        case _E:             return sendKeyCombo(LShift, _8);
+        case _R:             return sendKeyCombo(LShift, _9);
+        case _T:             return sendKeyCombo(LShift, _0);
+    }
+    return mapNormalKeyToCurrentLayout(buf, i);
+}
+
+
+RichKey GamingCapsLock_keymap(uint8_t *buf, uint8_t i) {
+     // map modifier
+    if (i == 0) switch (buf[0]) {
+
+    }
+    // map key
+    else switch (buf[i]){
+        case _CapsLock:      return NoKey;
+        case _Space:         return sendModifiers(LCtrl);
+        // CapsLock + row1 letter ==> RH number
         case _Q:             return sendKey(_6);
         case _W:             return sendKey(_7);
         case _E:             return sendKey(_8);
@@ -606,13 +634,41 @@ RichKey GamingTab_keymap(uint8_t *buf, uint8_t i) {
 RichKey GamingSpace_keymap(uint8_t *buf, uint8_t i) {
     // map modifier
     if (i == 0) switch (buf[0]) {
-
+        // Space + Shift ==> RH function key (F7)
+        case LShift:       return sendKey(_F7);
+        case LAlt:         return sendKey(_Space);
     }
     // map key
     else switch (buf[i]){
-        case _Space:         return sendModifiers(LCtrl);
+        case _Space:         return NoKey;
         case _Backtick:      return enterMode(GamingBacktick, buf, i);
         case _Tab:           return enterMode(GamingTab, buf, i);
+        case _CapsLock:      return enterMode(GamingCapsLock, buf, i);
+         // Space + row0 number ==> ctrl + LH number
+        case _1:             return sendKeyCombo(LCtrl, _1);
+        case _2:             return sendKeyCombo(LCtrl, _2);
+        case _3:             return sendKeyCombo(LCtrl, _3);
+        case _4:             return sendKeyCombo(LCtrl, _4);
+        case _5:             return sendKeyCombo(LCtrl, _5);
+        case _6:             return sendKeyCombo(LCtrl, _6);
+        // Space + R1,R2 letter keys ==> navigation keys
+        case _Q:             return sendKey(_Delete);
+        case _W:             return sendKey(_PgUp);
+        case _E:             return sendKey(_Up);
+        case _R:             return sendKey(_PgDn);
+        case _T:             return sendKey(_Backspace);
+        case _A:             return sendKey(_Home);
+        case _S:             return sendKey(_Left);
+        case _D:             return sendKey(_Down);
+        case _F:             return sendKey(_Right);
+        case _G:             return sendKey(_End);
+        // Space + R3 letter keys ==> RH function keys
+        case _Z:             return sendKey(_F8);
+        case _X:             return sendKey(_F9);
+        case _C:             return sendKey(_F10);
+        case _V:             return sendKey(_F11);
+        case _B:             return sendKey(_F12);
+
     }
     return mapNormalKeyToCurrentLayout(buf, i);
 }
