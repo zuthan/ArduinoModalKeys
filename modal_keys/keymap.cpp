@@ -210,10 +210,6 @@ RichKey Configuration_keymap(uint8_t *buf, uint8_t i) {
             EntryPointMode = NoKeys;
             break;
         case _F3:
-            CurrentLayout = colemak;
-            EntryPointMode = NoKeys;
-            break;
-        case _F4:
             CurrentLayout = qwerty;
             EntryPointMode = GamingNoKeys;
             break;
