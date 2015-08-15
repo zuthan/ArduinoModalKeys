@@ -46,6 +46,7 @@ USB Usb;
 HIDBoot<HID_PROTOCOL_KEYBOARD> HidKeyboard(&Usb);
 KbdRptParser Prs;
 
+uint8_t InputBuffer[8] = { 0 };
 uint8_t OutputBuffer[8] = { 0 };
 
 // *******************************************************************************************
@@ -63,9 +64,9 @@ void KbdRptParser::Parse(HID *hid, bool is_rpt_id, uint8_t len, uint8_t *buf) {
     }
 
     CopyBuf(buf, prevState.bInfo);
+
+    CopyBuf(buf, InputBuffer);
     CopyBuf(outbuf, OutputBuffer);
-    if (WriteToLog)
-        PrintState(buf, outbuf);
     SendState(outbuf);
 };
 
@@ -84,12 +85,14 @@ void MergeKeyIntoBuffer(RichKey key, uint8_t *buf){
     }
 }
 
-void SendState(uint8_t *buf){
+void SendState(uint8_t *buf) {
+    if (WriteToLog)
+        PrintState(InputBuffer, buf);
     if (SendOutput)
         SendKeysToHost(buf);
 }
 
-void PrintKeyState(uint8_t *buf){
+void PrintKeyState(uint8_t *buf) {
     MODIFIERKEYS mod;
     *((uint8_t*)&mod) = buf[0];
     Serial.print("<");
@@ -113,7 +116,7 @@ void PrintKeyState(uint8_t *buf){
     }
 }
 
-void PrintState(uint8_t *inBuf, uint8_t *outBuf){
+void PrintState(uint8_t *inBuf, uint8_t *outBuf) {
     Serial.print(GetStateString());
     PrintKeyState(inBuf);
     Serial.print("  ==>  ");
@@ -121,7 +124,7 @@ void PrintState(uint8_t *inBuf, uint8_t *outBuf){
     Serial.println();
 }
 
-void CopyBuf(uint8_t *from_buf, uint8_t *to_buf){
+void CopyBuf(uint8_t *from_buf, uint8_t *to_buf) {
     for (uint8_t i=0; i<8; i++) {
         to_buf[i] = from_buf[i];
     }
