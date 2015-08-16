@@ -25,23 +25,23 @@ typedef enum {
 // the available keyboard modes
 typedef enum
 {
-    NoKeys = 0,
-    Configuration,
-    Normal,
-    RemnantKeys,
-    LeftAlt,
-    LeftMod,
-    RightAlt,
-    RightMod,
-    AltTab,
-    WindowSnap,
-    NumPad,
-    GamingNoKeys,
-    GamingNormal,
-    GamingBacktick,
-    GamingTab,
-    GamingCapsLock,
-    GamingSpace
+    NoKeysMode = 0,
+    EscapeMode,
+    RightCtrlMode,
+    NormalMode,
+    LeftAltMode,
+    LeftModMode,
+    RightAltMode,
+    RightModMode,
+    AltTabMode,
+    WindowSnapMode,
+    NumPadMode,
+    GamingNoKeysMode,
+    GamingNormalMode,
+    GamingBacktickMode,
+    GamingTabMode,
+    GamingCapsLockMode,
+    GamingSpaceMode
 } Mode;
 
 typedef enum {
@@ -60,9 +60,10 @@ typedef enum {
 
 // helpers
 void LoadOSMode();
-void SetOSMode(OSMode osMode);
+ControlCode ChangeOSMode(OSMode osMode);
 void SetMode(Mode mode, ModeState modeState);
 ControlCode EnterMode(Mode mode, ModeState modeState);
+ControlCode ChangeConfiguration(KeyboardLayout layout, Mode entryPointMode);
 ControlCode SendKey(uint8_t keycode, uint8_t outbuf[8]);
 ControlCode SendModifiers(uint8_t mods, uint8_t outbuf[8]);
 ControlCode SendKeyCombo(uint8_t mods, uint8_t keycode, uint8_t outbuf[8]);
@@ -77,9 +78,9 @@ String GetModeStateString(ModeState modeState);
 String GetLayoutString(KeyboardLayout layout);
 
 // state changing methods
-ControlCode Configuration_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode Escape_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode RightCtrl_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 
-ControlCode DoNothing_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode Normal_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode EntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode LeftAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
@@ -121,23 +122,23 @@ const uint8_t *Keymap[] =
 
 // array of KeyMaps, one for each mode
 const KeyMap KeyMaps[] = {
-    &EntryPoint_keymap,         /* NoKeys */
-    &Configuration_keymap,      /* Configuration */
-    &Normal_keymap,             /* Normal */
-    &DoNothing_keymap,          /* RemnantKeys */
-    &LeftAltMode_keymap,        /* LeftAlt */
-    &LeftModMode_keymap,        /* LeftMod */
-    &RightAltMode_keymap,       /* RightAlt */
-    &RightModMode_keymap,       /* RightMod */
-    &AltTab_keymap,             /* AltTab */
-    &WindowSnap_keymap,         /* WindowSnap */
-    &NumPad_keymap,             /* NumPad */
-    &GamingEntryPoint_keymap,   /* GamingNoKeys */
-    &GamingNormal_keymap,       /* GamingNormal */
-    &GamingBacktick_keymap,     /* GamingBacktick */
-    &GamingTab_keymap,          /* GamingTab */
-    &GamingCapsLock_keymap,     /* GamingCapsLock */
-    &GamingSpace_keymap,        /* GamingSpace */
+    &EntryPoint_keymap,         /* NoKeysMode */
+    &Escape_keymap,             /* EscapeMode */
+    &RightCtrl_keymap,          /* RightCtrlMode */
+    &Normal_keymap,             /* NormalMode */
+    &LeftAltMode_keymap,        /* LeftAltMode */
+    &LeftModMode_keymap,        /* LeftModMode */
+    &RightAltMode_keymap,       /* RightAltMode */
+    &RightModMode_keymap,       /* RightModMode */
+    &AltTab_keymap,             /* AltTabMode */
+    &WindowSnap_keymap,         /* WindowSnapMode */
+    &NumPad_keymap,             /* NumPadMode */
+    &GamingEntryPoint_keymap,   /* GamingNoKeysMode */
+    &GamingNormal_keymap,       /* GamingNormalMode */
+    &GamingBacktick_keymap,     /* GamingBacktickMode */
+    &GamingTab_keymap,          /* GamingTabMode */
+    &GamingCapsLock_keymap,     /* GamingCapsLockMode */
+    &GamingSpace_keymap,        /* GamingSpaceMode */
 };
 
 // ****************************************************************************
@@ -145,8 +146,8 @@ const KeyMap KeyMaps[] = {
 // ****************************************************************************
 
 KeyboardLayout CurrentLayout = dvorak;
-Mode EntryPointMode = NoKeys;
-Mode CurrentMode = NoKeys;
+Mode EntryPointMode = NoKeysMode;
+Mode CurrentMode = NoKeysMode;
 OSMode CurrentOSMode = Windows;
 ModeState CurrentModeState = Clean;
 
@@ -187,59 +188,61 @@ uint8_t WindowSnapModifierKeycode() {
 // Mode implementations
 // ****************************************************************************
 
-ControlCode Configuration_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+ControlCode Escape_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
      // map modifier
     if (i == 0) switch (inbuf[0]) {
         case LCtrl:
         case RCtrl:
-            SetOSMode(Windows);
-            return Continue;
+            return ChangeOSMode(Windows);
         case LGui:
         case RGui:
-            SetOSMode(OSX);
-            return Continue;
+            return ChangeOSMode(OSX);
     }
 
-     // map key
-    if (i >= 2) switch (inbuf[i]){
-        case _Escape: return Continue;
-        case _F1:
-            CurrentModeState = Used;
-            CurrentLayout = qwerty;
-            EntryPointMode = NoKeys;
-            return Continue;
-        case _F2:
-            CurrentModeState = Used;
-            CurrentLayout = dvorak;
-            EntryPointMode = NoKeys;
-            return Continue;
-        case _F3:
-            CurrentModeState = Used;
-            CurrentLayout = qwerty;
-            EntryPointMode = GamingNoKeys;
-            return Continue;
+     // map first key
+    if (i == 2) switch (inbuf[i]) {
+        case _Escape:    return Continue;
+        case _F1:        return ChangeConfiguration(qwerty, NoKeysMode);
+        case _F2:        return ChangeConfiguration(dvorak, NoKeysMode);
+        case _F3:        return ChangeConfiguration(qwerty, GamingNoKeysMode);
     }
+    // all other keys
+    return InvalidKey();
+}
+
+ControlCode RightCtrl_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+    // map modifier
+    if (i == 0) switch (inbuf[0]) {
+        case RCtrl:       return Continue;
+        case LCtrl:       return ChangeOSMode(Windows);
+        case LGui:        return ChangeOSMode(OSX);
+    }
+
+     // map first key
+    if (i == 2) switch (inbuf[i]) {
+        case _1:        return ChangeConfiguration(qwerty, NoKeysMode);
+        case _2:        return ChangeConfiguration(dvorak, NoKeysMode);
+        case _3:        return ChangeConfiguration(qwerty, GamingNoKeysMode);
+    }
+    // all other keys
+    return EnterMode(NormalMode, Used);
 }
 
 ControlCode EntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // Modifier entry points
-    switch (inbuf[0]){
-        case LAlt: return EnterMode(LeftAlt, Clean);
-        case RAlt: return EnterMode(RightAlt, Clean);
+    if (i == 0) switch (inbuf[i]) {
+        case LAlt:     return EnterMode(LeftAltMode, Clean);
+        case RAlt:     return EnterMode(RightAltMode, Clean);
+        case RCtrl:    return EnterMode(RightCtrlMode, Clean);
     }
 
-    // normal key entry points
-    switch (inbuf[2]){
-        case _Escape:   return EnterMode(Configuration, Clean);
+    // normalMode key entry points
+    if (i == 2) switch (inbuf[i]) {
+        case _Escape:  return EnterMode(EscapeMode, Clean);
     }
 
-    // No special behavior activated. Apply normal keyboard behavior.
-    return EnterMode(Normal, Used);
-}
-
-// a keymap that always does nothing
-ControlCode DoNothing_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
-    return InvalidKey();
+    // No special behavior activated. Apply normalMode keyboard behavior.
+    return EnterMode(NormalMode, Used);
 }
 
 ControlCode mapNormalKeyToCurrentLayout(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
@@ -275,14 +278,14 @@ ControlCode LeftAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     }
     // map 1st key
     if (i == 2) switch (inbuf[i]) {
-        // normal mode modifiers
-        case _A:             return EnterMode(LeftMod, Used);
-        case _S:             return EnterMode(LeftMod, Used);
-        case _D:             return EnterMode(LeftMod, Used);
-        case _F:             return EnterMode(LeftMod, Used);
+        // normalMode mode modifiers
+        case _A:             return EnterMode(LeftModMode, Used);
+        case _S:             return EnterMode(LeftModMode, Used);
+        case _D:             return EnterMode(LeftModMode, Used);
+        case _F:             return EnterMode(LeftModMode, Used);
         // map secondary modifier
-        case _X:             return EnterMode(NumPad, Used);
-        case _C:             return EnterMode(WindowSnap, Used);
+        case _X:             return EnterMode(NumPadMode, Used);
+        case _C:             return EnterMode(WindowSnapMode, Used);
     }
     // map any key
     if (i >= 2) switch (inbuf[i]) {
@@ -293,7 +296,7 @@ ControlCode LeftAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _R:             return SendModifiers(LGui, outbuf);
 
         // Left Hand keys
-        case _Tab:           return EnterMode(AltTab, Used);
+        case _Tab:           return EnterMode(AltTabMode, Used);
         case _1:             return SendKey(_F1, outbuf);
         case _2:             return SendKey(_F2, outbuf);
         case _3:             return SendKey(_F3, outbuf);
@@ -309,7 +312,7 @@ ControlCode LeftAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _P:             return SendKey(_End, outbuf);
         case _LeftBracket:   return SendKey(_Enter, outbuf);
         case _RightBracket:  return SendKey(_Menu, outbuf);
-        case _Backslash:     return EnterMode(AltTab, Used);
+        case _Backslash:     return EnterMode(AltTabMode, Used);
         case _Backspace:     return SendKey(_CapsLock, outbuf);
         case _H:             return SendKey(_Backspace, outbuf);
         case _J:             return SendKey(_Left, outbuf);
@@ -325,13 +328,13 @@ ControlCode LeftAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _Equals:        return SendKey(_F12, outbuf);
     }
     // all other keys
-    return EnterMode(Normal, Used);
+    return EnterMode(NormalMode, Used);
 }
 
 ControlCode LeftModMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
-    // return to LeftAlt Mode when LAlt is the only key pressed
+    // return to LeftAltMode Mode when LAlt is the only key pressed
     if (inbuf[0] == LAlt && NumKeysOrModsPressed(inbuf) == 1)
-        return EnterMode(LeftAlt, Used);
+        return EnterMode(LeftAltMode, Used);
 
     // map modifier
     if (i == 0) switch (inbuf[i]) {
@@ -339,7 +342,7 @@ ControlCode LeftModMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     }
     // map any key
     if (i >= 2) switch (inbuf[i]) {
-        // normal mode modifiers
+        // normalMode mode modifiers
         case _A:             return SendModifiers(LShift, outbuf);
         case _S:             return SendModifiers(LAlt, outbuf);
         case _D:             return SendModifiers(LCtrl, outbuf);
@@ -356,11 +359,11 @@ ControlCode RightAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) 
     }
     // map first key
     if (i == 2) switch (inbuf[i]) {
-        // normal mode modifiers
-        case _J:             return EnterMode(RightMod, Used);
-        case _K:             return EnterMode(RightMod, Used);
-        case _L:             return EnterMode(RightMod, Used);
-        case _Semicolon:     return EnterMode(RightMod, Used);
+        // normalMode mode modifiers
+        case _J:             return EnterMode(RightModMode, Used);
+        case _K:             return EnterMode(RightModMode, Used);
+        case _L:             return EnterMode(RightModMode, Used);
+        case _Semicolon:     return EnterMode(RightModMode, Used);
     }
     // map any key
     if (i >= 2) switch (inbuf[i]) {
@@ -370,7 +373,7 @@ ControlCode RightAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) 
         case _O:             return SendModifiers(RAlt, outbuf);
         case _P:             return SendModifiers(RShift, outbuf);
         // Left Hand keys
-        case _Tab:           return EnterMode(AltTab, Used);
+        case _Tab:           return EnterMode(AltTabMode, Used);
         case _1:             return SendKey(_F1, outbuf);
         case _2:             return SendKey(_F2, outbuf);
         case _3:             return SendKey(_F3, outbuf);
@@ -378,16 +381,16 @@ ControlCode RightAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) 
         case _5:             return SendKey(_F5, outbuf);
         case _6:             return SendKey(_F6, outbuf);
         // Right Hand keys
-        case _Backslash:     return EnterMode(AltTab, Used);
+        case _Backslash:     return EnterMode(AltTabMode, Used);
     }
     // all other keys
-    return EnterMode(Normal, Used);
+    return EnterMode(NormalMode, Used);
 }
 
 ControlCode RightModMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
-    // return to RightAlt Mode when RAlt is the only key pressed
+    // return to RightAltMode Mode when RAlt is the only key pressed
     if (inbuf[0] == RAlt && NumKeysOrModsPressed(inbuf) == 1)
-        return EnterMode(RightAlt, Used);
+        return EnterMode(RightAltMode, Used);
 
     // map modifier
     if (i == 0) switch (inbuf[0]){
@@ -395,7 +398,7 @@ ControlCode RightModMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) 
     }
     // map any key
     if (i >= 2) switch (inbuf[i]) {
-        // normal mode modifiers
+        // normalMode mode modifiers
         case _J:             return SendModifiers(RGui, outbuf);
         case _K:             return SendModifiers(RCtrl, outbuf);
         case _L:             return SendModifiers(RAlt, outbuf);
@@ -435,7 +438,7 @@ ControlCode AltTab_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
 
 ControlCode WindowSnap_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // exit condition: first key pressed is no longer _C
-    if (inbuf[2] != _C) return EnterMode(NoKeys, Used);
+    if (inbuf[2] != _C) return EnterMode(NoKeysMode, Used);
 
     // map modifier
     if (i == 0) switch (inbuf[i]) {
@@ -445,15 +448,13 @@ ControlCode WindowSnap_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     if (i == 2) switch (inbuf[i]) { // must be _C because of exit guard
         default:           return SendModifiers(WindowSnapModifierKeycode(), outbuf);
     }
-    // map subsequent keys
-    if (i > 2) switch (inbuf[i]) {
-        default:           return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
-    }
+    // all other keys
+    return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
 }
 
 ControlCode NumPad_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // exit condition: first key pressed is no longer _X
-    if (inbuf[2] != _X)             return EnterMode(NoKeys, Used);
+    if (inbuf[2] != _X)             return EnterMode(NoKeysMode, Used);
 
     // map modifier
     if (i == 0) switch (inbuf[i]) {
@@ -500,17 +501,18 @@ ControlCode GamingEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[
     // map modifier
     if (i == 0) switch (inbuf[0]) {
         case LGui:        return SendKey(_Backspace, outbuf);
+        case RCtrl:       return EnterMode(RightCtrlMode, Clean);
     }
     // map first key
     if (i == 2) switch (inbuf[i]) {
-        case _Escape:     return EnterMode(Configuration, Clean);
-        case _Backtick:   return EnterMode(GamingBacktick, Clean);
-        case _Tab:        return EnterMode(GamingTab, Clean);
-        case _CapsLock:   return EnterMode(GamingCapsLock, Clean);
-        case _Space:      return EnterMode(GamingSpace, Clean);
+        case _Escape:     return EnterMode(EscapeMode, Clean);
+        case _Backtick:   return EnterMode(GamingBacktickMode, Clean);
+        case _Tab:        return EnterMode(GamingTabMode, Clean);
+        case _CapsLock:   return EnterMode(GamingCapsLockMode, Clean);
+        case _Space:      return EnterMode(GamingSpaceMode, Clean);
     }
     // all other keys
-    return EnterMode(GamingNormal, Used);
+    return EnterMode(GamingNormalMode, Used);
 }
 
 ControlCode GamingNormal_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
@@ -605,9 +607,9 @@ ControlCode GamingSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map any key
     if (i >= 2) switch (inbuf[i]){
         case _Space:         return Continue;
-        case _Backtick:      return EnterMode(GamingBacktick, Used);
-        case _Tab:           return EnterMode(GamingTab, Used);
-        case _CapsLock:      return EnterMode(GamingCapsLock, Used);
+        case _Backtick:      return EnterMode(GamingBacktickMode, Used);
+        case _Tab:           return EnterMode(GamingTabMode, Used);
+        case _CapsLock:      return EnterMode(GamingCapsLockMode, Used);
          // Space + row0 number ==> ctrl + LH number
         case _1:             return SendKeyCombo(LCtrl, _1, outbuf);
         case _2:             return SendKeyCombo(LCtrl, _2, outbuf);
@@ -644,24 +646,27 @@ ControlCode GamingSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
 // ****************************************************************************
 
 void HandleLastKeyReleased() {
-    // send normal keys on release of custom modifier if no other keys were pressed while it was held down
+    // send normalMode keys on release of custom modifier if no other keys were pressed while it was held down
     if (CurrentModeState == Clean) switch (CurrentMode) {
-        case Configuration: // send Escape on release
+        case EscapeMode: // send Escape on release
             PressAndReleaseKey((RichKey){ 0, _Escape } );
             break;
-        case LeftAlt: // send Left Alt on release
+        case RightCtrlMode: // send RCtrl on release
+            PressAndReleaseKey((RichKey){ RCtrl, 0 } );
+            break;
+        case LeftAltMode: // send Left Alt on release
             PressAndReleaseKey((RichKey){ LAlt, 0 } );
             break;
-        case RightAlt: // send Right Alt on release
+        case RightAltMode: // send Right Alt on release
             PressAndReleaseKey((RichKey){ RAlt, 0 } );
             break;
-        case GamingBacktick: // send Backtick on release
+        case GamingBacktickMode: // send Backtick on release
             PressAndReleaseKey((RichKey){ 0, _Backtick } );
             break;
-        case GamingTab: // send Tab on release
+        case GamingTabMode: // send Tab on release
             PressAndReleaseKey((RichKey){ 0, _Tab } );
             break;
-        case GamingSpace: // send Space on release
+        case GamingSpaceMode: // send Space on release
             PressAndReleaseKey((RichKey){ 0, _Space } );
             break;
     }
@@ -678,9 +683,10 @@ void LoadOSMode() {
     CurrentOSMode = osMode;
 }
 
-void SetOSMode(OSMode osMode) {
+ControlCode ChangeOSMode(OSMode osMode) {
     CurrentOSMode = osMode;
     EEPROM.put( OSModeSlot, osMode );
+    return Stop;
 }
 
 void SetMode(Mode mode, ModeState modeState) {
@@ -692,6 +698,13 @@ ControlCode EnterMode(Mode mode, ModeState modeState) {
     Log("entering Mode: " + GetModeString(mode));
     SetMode(mode, modeState);
     return Restart;
+}
+
+ControlCode ChangeConfiguration(KeyboardLayout layout, Mode entryPointMode) {
+    CurrentModeState = Used;
+    CurrentLayout = layout;
+    EntryPointMode = entryPointMode;
+    return Stop;
 }
 
 ControlCode SendKey(uint8_t keycode, uint8_t outbuf[8]) {
@@ -747,24 +760,24 @@ String GetOSModeString(OSMode osMode) {
 
 String GetModeString(Mode mode) {
     switch (mode){
-        case Configuration:   return "Configuration";
-        case NoKeys:          return "NoKeys";
-        case Normal:          return "Normal";
-        case RemnantKeys:     return "RemnantKeys";
-        case LeftAlt:         return "LeftAlt";
-        case LeftMod:         return "LeftMod";
-        case RightAlt:        return "RightAlt";
-        case RightMod:        return "RightMod";
-        case AltTab:          return "AltTab";
-        case WindowSnap:      return "WindowSnap";
-        case NumPad:          return "NumPad";
-        case GamingNoKeys:    return "GamingNoKeys";
-        case GamingNormal:    return "GamingNormal";
-        case GamingBacktick:  return "GamingBacktick";
-        case GamingTab:       return "GamingTab";
-        case GamingCapsLock:  return "GamingCapsLock";
-        case GamingSpace:     return "GamingSpace";
-        default:              return "<unknown>";
+        case EscapeMode:          return "Escape";
+        case RightCtrlMode:       return "RightCtrl";
+        case NoKeysMode:          return "NoKeys";
+        case NormalMode:          return "Normal";
+        case LeftAltMode:         return "LeftAlt";
+        case LeftModMode:         return "LeftMod";
+        case RightAltMode:        return "RightAlt";
+        case RightModMode:        return "RightMod";
+        case AltTabMode:          return "AltTab";
+        case WindowSnapMode:      return "WindowSnap";
+        case NumPadMode:          return "NumPad";
+        case GamingNoKeysMode:    return "GamingNoKeys";
+        case GamingNormalMode:    return "GamingNormal";
+        case GamingBacktickMode:  return "GamingBacktick";
+        case GamingTabMode:       return "GamingTab";
+        case GamingCapsLockMode:  return "GamingCapsLock";
+        case GamingSpaceMode:     return "GamingSpace";
+        default:                  return "<unknown>";
     }
 }
 
