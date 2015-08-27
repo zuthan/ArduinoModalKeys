@@ -508,6 +508,7 @@ ControlCode GamingEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[
     if (i == 2) switch (inbuf[i]) {
         case _Escape:     return EnterMode(EscapeMode, Clean);
         case _Backtick:   return EnterMode(GamingBacktickMode, Clean);
+        case _6:          return SendKey(_Escape, outbuf);
         case _Tab:        return EnterMode(GamingTabMode, Clean);
         case _CapsLock:   return EnterMode(GamingCapsLockMode, Clean);
         case _Space:      return EnterMode(GamingSpaceMode, Clean);
@@ -545,7 +546,6 @@ ControlCode GamingBacktick_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]
         case _3:             return SendKey(_F3, outbuf);
         case _4:             return SendKey(_F4, outbuf);
         case _5:             return SendKey(_F5, outbuf);
-        case _6:             return SendKey(_F6, outbuf);
         // backtick + row1 letter ==> RH function key
         case _Q:             return SendKey(_F6, outbuf);
         case _W:             return SendKey(_F7, outbuf);
@@ -578,7 +578,6 @@ ControlCode GamingTab_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _3:             return SendKeyCombo(LShift, _3, outbuf);
         case _4:             return SendKeyCombo(LShift, _4, outbuf);
         case _5:             return SendKeyCombo(LShift, _5, outbuf);
-        case _6:             return SendKeyCombo(LShift, _6, outbuf);
         // Tab + row1 letter ==> shift + RH number
         case _Q:             return SendKeyCombo(LShift, _6, outbuf);
         case _W:             return SendKeyCombo(LShift, _7, outbuf);
@@ -633,7 +632,6 @@ ControlCode GamingSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _3:             return SendKeyCombo(LCtrl, _3, outbuf);
         case _4:             return SendKeyCombo(LCtrl, _4, outbuf);
         case _5:             return SendKeyCombo(LCtrl, _5, outbuf);
-        case _6:             return SendKeyCombo(LCtrl, _6, outbuf);
         // Space + R1,R2 letter keys ==> navigation keys
         case _Q:             return SendKey(_Home, outbuf);
         case _W:             return SendKey(_PgUp, outbuf);
