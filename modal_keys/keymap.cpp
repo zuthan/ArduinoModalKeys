@@ -199,8 +199,8 @@ ControlCode Escape_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
             return ChangeOSMode(OSX);
     }
 
-     // map first key
-    if (i == 2) switch (inbuf[i]) {
+     // map subsequent keys
+    if (i >= 2) switch (inbuf[i]) {
         case _Escape:    return Continue;
         case _F1:        return ChangeConfiguration(qwerty, NoKeysMode);
         case _F2:        return ChangeConfiguration(dvorak, NoKeysMode);
@@ -705,12 +705,12 @@ ControlCode ChangeOSMode(OSMode osMode) {
 }
 
 void SetMode(Mode mode, ModeState modeState) {
+    Log("set Mode: " + GetModeString(mode));
     CurrentMode = mode;
     CurrentModeState = modeState;
 }
 
 ControlCode EnterMode(Mode mode, ModeState modeState) {
-    Log("entering Mode: " + GetModeString(mode));
     SetMode(mode, modeState);
     return Restart;
 }
@@ -719,6 +719,7 @@ ControlCode ChangeConfiguration(KeyboardLayout layout, Mode entryPointMode) {
     CurrentModeState = Used;
     CurrentLayout = layout;
     EntryPointMode = entryPointMode;
+    Log("new entry point Mode: " + GetModeString(entryPointMode));
     return Stop;
 }
 

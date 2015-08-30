@@ -98,8 +98,7 @@ bool TransitionToState(uint8_t newbuf[8]) {
 
 void SendState(uint8_t buf[8]) {
     CopyBuf(buf, OutputBuffer);
-    if (WriteToLog)
-        PrintState(InputBuffer, OutputBuffer, true);
+    PrintState(InputBuffer, OutputBuffer, true);
     if (SendOutput){
         delay(1);
         SendKeysToHost(OutputBuffer);
@@ -217,6 +216,7 @@ String KeyToString(uint8_t key) {
 }
 
 /* shared */ void Log(String text){
+    if (!WriteToLog) return;
     Serial.println(text);
 }
 
@@ -230,6 +230,7 @@ String BufferToString(uint8_t buf[8]) {
 }
 
 void PrintState(uint8_t inBuf[8], uint8_t outBuf[8], bool outputChanged) {
+    if (!WriteToLog) return;
     Serial.print(GetStateString());
     Serial.print(BufferToString(inBuf));
     if (outputChanged){
