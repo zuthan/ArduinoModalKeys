@@ -699,8 +699,10 @@ void LoadOSMode() {
 }
 
 ControlCode ChangeOSMode(OSMode osMode) {
+    CurrentModeState = Used;
     CurrentOSMode = osMode;
     EEPROM.put( OSModeSlot, osMode );
+    Log("new OSMode: " + GetOSModeString(osMode));
     return Stop;
 }
 
