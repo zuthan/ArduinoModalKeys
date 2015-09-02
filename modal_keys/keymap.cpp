@@ -25,7 +25,8 @@ typedef enum {
 // the available keyboard modes
 typedef enum
 {
-    NoKeysMode = 0,
+    NormalNoKeysMode = 0,
+    ModalNoKeysMode,
     EscapeMode,
     RightCtrlMode,
     NormalMode,
@@ -78,11 +79,12 @@ String GetModeStateString(ModeState modeState);
 String GetLayoutString(KeyboardLayout layout);
 
 // state changing methods
+ControlCode NormalEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode ModalEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode Escape_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode RightCtrl_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 
 ControlCode Normal_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
-ControlCode EntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode LeftAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode LeftModMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode RightAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
@@ -122,7 +124,8 @@ const uint8_t *Keymap[] =
 
 // array of KeyMaps, one for each mode
 const KeyMap KeyMaps[] = {
-    &EntryPoint_keymap,         /* NoKeysMode */
+    &NormalEntryPoint_keymap,   /* NormalNoKeysMode */
+    &ModalEntryPoint_keymap,    /* ModalNoKeysMode */
     &Escape_keymap,             /* EscapeMode */
     &RightCtrl_keymap,          /* RightCtrlMode */
     &Normal_keymap,             /* NormalMode */
@@ -134,7 +137,7 @@ const KeyMap KeyMaps[] = {
     &WindowSnap_keymap,         /* WindowSnapMode */
     &NumPad_keymap,             /* NumPadMode */
     &GamingEntryPoint_keymap,   /* GamingNoKeysMode */
-    &GamingMod_keymap,       /* GamingModMode */
+    &GamingMod_keymap,          /* GamingModMode */
     &GamingBacktick_keymap,     /* GamingBacktickMode */
     &GamingTab_keymap,          /* GamingTabMode */
     &GamingCapsLock_keymap,     /* GamingCapsLockMode */
@@ -146,8 +149,8 @@ const KeyMap KeyMaps[] = {
 // ****************************************************************************
 
 KeyboardLayout CurrentLayout = dvorak;
-Mode EntryPointMode = NoKeysMode;
-Mode CurrentMode = NoKeysMode;
+Mode EntryPointMode = ModalNoKeysMode;
+Mode CurrentMode = ModalNoKeysMode;
 OSMode CurrentOSMode = Windows;
 ModeState CurrentModeState = Clean;
 
@@ -202,8 +205,8 @@ ControlCode Escape_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
      // map subsequent keys
     if (i >= 2) switch (inbuf[i]) {
         case _Escape:    return Continue;
-        case _F1:        return ChangeConfiguration(qwerty, NoKeysMode);
-        case _F2:        return ChangeConfiguration(dvorak, NoKeysMode);
+        case _F1:        return ChangeConfiguration(qwerty, NormalNoKeysMode);
+        case _F2:        return ChangeConfiguration(dvorak, ModalNoKeysMode);
         case _F3:        return ChangeConfiguration(qwerty, GamingNoKeysMode);
     }
     // all other keys
@@ -220,15 +223,30 @@ ControlCode RightCtrl_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
 
      // map first key
     if (i == 2) switch (inbuf[i]) {
-        case _1:        return ChangeConfiguration(qwerty, NoKeysMode);
-        case _2:        return ChangeConfiguration(dvorak, NoKeysMode);
+        case _1:        return ChangeConfiguration(qwerty, NormalNoKeysMode);
+        case _2:        return ChangeConfiguration(dvorak, ModalNoKeysMode);
         case _3:        return ChangeConfiguration(qwerty, GamingNoKeysMode);
     }
     // all other keys
     return EnterMode(NormalMode, Used);
 }
 
-ControlCode EntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+ControlCode NormalEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+    // Modifier entry points
+    if (i == 0) switch (inbuf[i]) {
+        case RCtrl:    return EnterMode(RightCtrlMode, Clean);
+    }
+
+    // key entry points
+    if (i == 2) switch (inbuf[i]) {
+        case _Escape:  return EnterMode(EscapeMode, Clean);
+    }
+
+    // No special behavior activated. Apply normalMode keyboard behavior.
+    return EnterMode(NormalMode, Used);
+}
+
+ControlCode ModalEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // Modifier entry points
     if (i == 0) switch (inbuf[i]) {
         case LAlt:     return EnterMode(LeftAltMode, Clean);
@@ -236,7 +254,7 @@ ControlCode EntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case RCtrl:    return EnterMode(RightCtrlMode, Clean);
     }
 
-    // normalMode key entry points
+    // key entry points
     if (i == 2) switch (inbuf[i]) {
         case _Escape:  return EnterMode(EscapeMode, Clean);
     }
@@ -438,7 +456,7 @@ ControlCode AltTab_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
 
 ControlCode WindowSnap_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // exit condition: first key pressed is no longer _C
-    if (inbuf[2] != _C) return EnterMode(NoKeysMode, Used);
+    if (inbuf[2] != _C) return EnterMode(ModalNoKeysMode, Used);
 
     // map modifier
     if (i == 0) switch (inbuf[i]) {
@@ -454,7 +472,7 @@ ControlCode WindowSnap_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
 
 ControlCode NumPad_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // exit condition: first key pressed is no longer _X
-    if (inbuf[2] != _X)             return EnterMode(NoKeysMode, Used);
+    if (inbuf[2] != _X)             return EnterMode(ModalNoKeysMode, Used);
 
     // map modifier
     if (i == 0) switch (inbuf[i]) {
@@ -780,7 +798,7 @@ String GetModeString(Mode mode) {
     switch (mode){
         case EscapeMode:          return "Escape";
         case RightCtrlMode:       return "RightCtrl";
-        case NoKeysMode:          return "NoKeys";
+        case ModalNoKeysMode:          return "NoKeys";
         case NormalMode:          return "Normal";
         case LeftAltMode:         return "LeftAlt";
         case LeftModMode:         return "LeftMod";
