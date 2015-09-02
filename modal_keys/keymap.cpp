@@ -42,6 +42,7 @@ typedef enum
     GamingBacktickMode,
     GamingTabMode,
     GamingCapsLockMode,
+    GamingAltMode,
     GamingSpaceMode
 } Mode;
 
@@ -98,6 +99,7 @@ ControlCode GamingMod_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode GamingBacktick_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode GamingTab_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode GamingCapsLock_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode GamingAlt_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode GamingSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 
 // state handling callbacks
@@ -141,6 +143,7 @@ const KeyMap KeyMaps[] = {
     &GamingBacktick_keymap,     /* GamingBacktickMode */
     &GamingTab_keymap,          /* GamingTabMode */
     &GamingCapsLock_keymap,     /* GamingCapsLockMode */
+    &GamingAlt_keymap,          /* GamingAltMode */
     &GamingSpace_keymap,        /* GamingSpaceMode */
 };
 
@@ -518,7 +521,9 @@ ControlCode NumPad_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
 ControlCode GamingEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map modifier
     if (i == 0) switch (inbuf[i]) {
-        case LGui:        return SendKey(_Backspace, outbuf);
+        case LShift:      return SendKey(_Backspace, outbuf);
+        case LGui:        return SendKey(_Escape, outbuf);
+        case LAlt:        return EnterMode(GamingAltMode, Clean);
         case RCtrl:       return EnterMode(RightCtrlMode, Clean);
         default:          return EnterMode(GamingModMode, Used);
     }
@@ -571,10 +576,7 @@ ControlCode GamingBacktick_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]
         case _R:             return SendKey(_F9, outbuf);
         case _T:             return SendKey(_F10, outbuf);
         // backtick + row2 letter ==> last 2 RH function keys
-        case _A:             return SendKey(_F11, outbuf);
-        case _S:             return SendKey(_F11, outbuf);
-        case _D:             return SendKey(_F11, outbuf);
-        case _F:             return SendKey(_F12, outbuf);
+        case _F:             return SendKey(_F11, outbuf);
         case _G:             return SendKey(_F12, outbuf);
     }
     // all other keys
@@ -632,6 +634,38 @@ ControlCode GamingCapsLock_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]
     return InvalidKey();
 }
 
+ControlCode GamingAlt_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+    // map modifier
+    if (i == 0) switch (inbuf[i]) {
+        case LAlt:           return Continue;
+        default:             return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
+    }
+    // map any key
+    if (i >= 2) switch (inbuf[i]){
+        // Space + R1,R2 letter keys ==> navigation keys
+        case _Q:             return SendKey(_Home, outbuf);
+        case _W:             return SendKey(_PgUp, outbuf);
+        case _E:             return SendKey(_Up, outbuf);
+        case _R:             return SendKey(_PgDn, outbuf);
+        case _T:             return SendKey(_End, outbuf);
+
+        case _A:             return SendKey(_Backspace, outbuf);
+        case _S:             return SendKey(_Left, outbuf);
+        case _D:             return SendKey(_Down, outbuf);
+        case _F:             return SendKey(_Right, outbuf);
+        case _G:             return SendKey(_Space, outbuf);
+        // Space + R3 letter keys ==> misc extras
+        case _Z:             return SendKey(_Insert, outbuf);
+        case _X:             return SendKey(_Backslash, outbuf);
+        case _C:             return SendKey(_Delete, outbuf);
+        case _V:             return SendKey(_LeftBracket, outbuf);
+        case _B:             return SendKey(_RightBracket, outbuf);
+
+    }
+    // all other keys
+    return InvalidKey();
+}
+
 ControlCode GamingSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map modifier
     if (i == 0) switch (inbuf[i]) {
@@ -650,16 +684,16 @@ ControlCode GamingSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _3:             return SendKeyCombo(LCtrl, _3, outbuf);
         case _4:             return SendKeyCombo(LCtrl, _4, outbuf);
         case _5:             return SendKeyCombo(LCtrl, _5, outbuf);
-        // Space + R1,R2 letter keys ==> navigation keys
-        case _Q:             return SendKey(_Home, outbuf);
-        case _W:             return SendKey(_PgUp, outbuf);
-        case _E:             return SendKey(_Up, outbuf);
-        case _R:             return SendKey(_PgDn, outbuf);
-        case _T:             return SendKey(_End, outbuf);
-
-        case _A:             return SendKey(_Backspace, outbuf);
-        case _S:             return SendKey(_Left, outbuf);
-        case _D:             return SendKey(_Down, outbuf);
+        // Space + R1 letter keys ==> RH number
+        case _Q:             return SendKey(_6, outbuf);
+        case _W:             return SendKey(_7, outbuf);
+        case _E:             return SendKey(_8, outbuf);
+        case _R:             return SendKey(_9, outbuf);
+        case _T:             return SendKey(_0, outbuf);
+        // Space + R2 letter keys ==> Navigation keys
+        case _A:             return SendKey(_Left, outbuf);
+        case _S:             return SendKey(_Down, outbuf);
+        case _D:             return SendKey(_Up, outbuf);
         case _F:             return SendKey(_Right, outbuf);
         case _G:             return SendKey(_Space, outbuf);
         // Space + R3 letter keys ==> misc extras
@@ -698,6 +732,9 @@ void HandleLastKeyReleased() {
             break;
         case GamingTabMode: // send Tab on release
             PressAndReleaseKey((RichKey){ 0, _Tab } );
+            break;
+        case GamingAltMode: // send LAlt on release
+            PressAndReleaseKey((RichKey){ LAlt, 0 } );
             break;
         case GamingSpaceMode: // send Space on release
             PressAndReleaseKey((RichKey){ 0, _Space } );
@@ -796,9 +833,10 @@ String GetOSModeString(OSMode osMode) {
 
 String GetModeString(Mode mode) {
     switch (mode){
+        case NormalNoKeysMode:    return "NormalNoKeys";
+        case ModalNoKeysMode:     return "ModalNoKeys";
         case EscapeMode:          return "Escape";
         case RightCtrlMode:       return "RightCtrl";
-        case ModalNoKeysMode:          return "NoKeys";
         case NormalMode:          return "Normal";
         case LeftAltMode:         return "LeftAlt";
         case LeftModMode:         return "LeftMod";
@@ -812,6 +850,7 @@ String GetModeString(Mode mode) {
         case GamingBacktickMode:  return "GamingBacktick";
         case GamingTabMode:       return "GamingTab";
         case GamingCapsLockMode:  return "GamingCapsLock";
+        case GamingAltMode:       return "GamingAlt";
         case GamingSpaceMode:     return "GamingSpace";
         default:                  return "<unknown>";
     }
