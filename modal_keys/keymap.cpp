@@ -388,7 +388,7 @@ ControlCode RightAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) 
          // alt mode modifiers
         case _U:             return SendModifiers(RGui, outbuf);
         case _I:             return SendModifiers(RCtrl, outbuf);
-        case _O:             return SendModifiers(RAlt, outbuf);
+        case _O:             return SendModifiers(LAlt, outbuf); // RAlt is treated as Alt Grave and doesn't work as Meta key sometimes on Linux
         case _P:             return SendModifiers(RShift, outbuf);
         // Left Hand keys
         case _Tab:           return EnterMode(AltTabMode, Used);
@@ -419,7 +419,7 @@ ControlCode RightModMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) 
         // normalMode mode modifiers
         case _J:             return SendModifiers(RGui, outbuf);
         case _K:             return SendModifiers(RCtrl, outbuf);
-        case _L:             return SendModifiers(RAlt, outbuf);
+        case _L:             return SendModifiers(LAlt, outbuf); // RAlt is treated as Alt Grave and doesn't work as Meta key sometimes on Linux
         case _Semicolon:     return SendModifiers(RShift, outbuf);
     }
     // all other keys
