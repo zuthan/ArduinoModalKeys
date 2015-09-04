@@ -299,11 +299,6 @@ ControlCode LeftAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     }
     // map 1st key
     if (i == 2) switch (inbuf[i]) {
-        // normalMode mode modifiers
-        case _A:             return EnterMode(LeftModMode, Used);
-        case _S:             return EnterMode(LeftModMode, Used);
-        case _D:             return EnterMode(LeftModMode, Used);
-        case _F:             return EnterMode(LeftModMode, Used);
         // map secondary modifier
         case _X:             return EnterMode(NumPadMode, Used);
         case _C:             return EnterMode(WindowSnapMode, Used);
@@ -315,6 +310,11 @@ ControlCode LeftAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _W:             return SendModifiers(LAlt, outbuf);
         case _E:             return SendModifiers(LCtrl, outbuf);
         case _R:             return SendModifiers(LGui, outbuf);
+        // normalMode mode modifiers
+        case _A:             return EnterMode(LeftModMode, Used);
+        case _S:             return EnterMode(LeftModMode, Used);
+        case _D:             return EnterMode(LeftModMode, Used);
+        case _F:             return EnterMode(LeftModMode, Used);
 
         // Left Hand keys
         case _Tab:           return EnterMode(AltTabMode, Used);
@@ -378,21 +378,18 @@ ControlCode RightAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) 
     if (i == 0) switch (inbuf[i]) {
         case RAlt:           return Continue;
     }
-    // map first key
-    if (i == 2) switch (inbuf[i]) {
-        // normalMode mode modifiers
-        case _J:             return EnterMode(RightModMode, Used);
-        case _K:             return EnterMode(RightModMode, Used);
-        case _L:             return EnterMode(RightModMode, Used);
-        case _Semicolon:     return EnterMode(RightModMode, Used);
-    }
-    // map any key
+    // map key
     if (i >= 2) switch (inbuf[i]) {
          // alt mode modifiers
         case _U:             return SendModifiers(RGui, outbuf);
         case _I:             return SendModifiers(RCtrl, outbuf);
         case _O:             return SendModifiers(LAlt, outbuf); // RAlt is treated as Alt Grave and doesn't work as Meta key sometimes on Linux
         case _P:             return SendModifiers(RShift, outbuf);
+        // normalMode mode modifiers
+        case _J:             return EnterMode(RightModMode, Used);
+        case _K:             return EnterMode(RightModMode, Used);
+        case _L:             return EnterMode(RightModMode, Used);
+        case _Semicolon:     return EnterMode(RightModMode, Used);
         // Left Hand keys
         case _Tab:           return EnterMode(AltTabMode, Used);
         case _1:             return SendKey(_F1, outbuf);
