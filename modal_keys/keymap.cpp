@@ -29,7 +29,8 @@ typedef enum
     ModalNoKeysMode,
     EscapeMode,
     RightCtrlMode,
-    NormalMode,
+    NormalTypingMode,
+    ModalTypingMode,
     LeftAltMode,
     LeftModMode,
     RightAltMode,
@@ -85,7 +86,8 @@ ControlCode ModalEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8
 ControlCode Escape_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode RightCtrl_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 
-ControlCode Normal_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode NormalTyping_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode ModalTyping_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode LeftAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode LeftModMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode RightAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
@@ -130,7 +132,8 @@ const KeyMap KeyMaps[] = {
     &ModalEntryPoint_keymap,    /* ModalNoKeysMode */
     &Escape_keymap,             /* EscapeMode */
     &RightCtrl_keymap,          /* RightCtrlMode */
-    &Normal_keymap,             /* NormalMode */
+    &NormalTyping_keymap,       /* NormalTypingMode */
+    &ModalTyping_keymap,       /* ModalTypingMode */
     &LeftAltMode_keymap,        /* LeftAltMode */
     &LeftModMode_keymap,        /* LeftModMode */
     &RightAltMode_keymap,       /* RightAltMode */
@@ -231,7 +234,7 @@ ControlCode RightCtrl_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _3:        return ChangeConfiguration(qwerty, GamingNoKeysMode);
     }
     // all other keys
-    return EnterMode(NormalMode, Used);
+    return EnterMode(NormalTypingMode, Used);
 }
 
 ControlCode NormalEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
@@ -245,8 +248,8 @@ ControlCode NormalEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[
         case _Escape:  return EnterMode(EscapeMode, Clean);
     }
 
-    // No special behavior activated. Apply normalMode keyboard behavior.
-    return EnterMode(NormalMode, Used);
+    // No special behavior activated. Apply normalTypingMode keyboard behavior.
+    return EnterMode(NormalTypingMode, Used);
 }
 
 ControlCode ModalEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
@@ -262,8 +265,8 @@ ControlCode ModalEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8
         case _Escape:  return EnterMode(EscapeMode, Clean);
     }
 
-    // No special behavior activated. Apply normalMode keyboard behavior.
-    return EnterMode(NormalMode, Used);
+    // No special behavior activated. Apply normalTypingMode keyboard behavior.
+    return EnterMode(ModalTypingMode, Used);
 }
 
 ControlCode mapNormalKeyToCurrentLayout(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
@@ -288,7 +291,17 @@ ControlCode mapNormalKeyToCurrentLayout(uint8_t inbuf[8], uint8_t i, uint8_t out
 }
 
 // the keymap that just maps the key to the current keyboard layout
-ControlCode Normal_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+ControlCode NormalTyping_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+    return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
+}
+
+ControlCode ModalTyping_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+    // Modifier entry points
+    if (i == 0) switch (inbuf[i]) {
+        case LAlt:     return EnterMode(LeftAltMode, Clean);
+        case RAlt:     return EnterMode(RightAltMode, Clean);
+    }
+
     return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
 }
 
@@ -310,7 +323,7 @@ ControlCode LeftAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _W:             return SendModifiers(LAlt, outbuf);
         case _E:             return SendModifiers(LCtrl, outbuf);
         case _R:             return SendModifiers(LGui, outbuf);
-        // normalMode mode modifiers
+        // normalTypingMode mode modifiers
         case _A:             return EnterMode(LeftModMode, Used);
         case _S:             return EnterMode(LeftModMode, Used);
         case _D:             return EnterMode(LeftModMode, Used);
@@ -349,7 +362,7 @@ ControlCode LeftAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _Equals:        return SendKey(_F12, outbuf);
     }
     // all other keys
-    return EnterMode(NormalMode, Used);
+    return EnterMode(NormalTypingMode, Used);
 }
 
 ControlCode LeftModMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
@@ -363,7 +376,7 @@ ControlCode LeftModMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     }
     // map any key
     if (i >= 2) switch (inbuf[i]) {
-        // normalMode mode modifiers
+        // normalTypingMode mode modifiers
         case _A:             return SendModifiers(LShift, outbuf);
         case _S:             return SendModifiers(LAlt, outbuf);
         case _D:             return SendModifiers(LCtrl, outbuf);
@@ -385,7 +398,7 @@ ControlCode RightAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) 
         case _I:             return SendModifiers(RCtrl, outbuf);
         case _O:             return SendModifiers(LAlt, outbuf); // RAlt is treated as Alt Grave and doesn't work as Meta key sometimes on Linux
         case _P:             return SendModifiers(RShift, outbuf);
-        // normalMode mode modifiers
+        // normalTypingMode mode modifiers
         case _J:             return EnterMode(RightModMode, Used);
         case _K:             return EnterMode(RightModMode, Used);
         case _L:             return EnterMode(RightModMode, Used);
@@ -402,7 +415,7 @@ ControlCode RightAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) 
         case _Backslash:     return EnterMode(AltTabMode, Used);
     }
     // all other keys
-    return EnterMode(NormalMode, Used);
+    return EnterMode(NormalTypingMode, Used);
 }
 
 ControlCode RightModMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
@@ -416,7 +429,7 @@ ControlCode RightModMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) 
     }
     // map any key
     if (i >= 2) switch (inbuf[i]) {
-        // normalMode mode modifiers
+        // normalTypingMode mode modifiers
         case _J:             return SendModifiers(RGui, outbuf);
         case _K:             return SendModifiers(RCtrl, outbuf);
         case _L:             return SendModifiers(LAlt, outbuf); // RAlt is treated as Alt Grave and doesn't work as Meta key sometimes on Linux
@@ -717,7 +730,7 @@ ControlCode GamingSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
 // ****************************************************************************
 
 void HandleLastKeyReleased() {
-    // send normalMode keys on release of custom modifier if no other keys were pressed while it was held down
+    // send normalTypingMode keys on release of custom modifier if no other keys were pressed while it was held down
     if (CurrentModeState == Clean) switch (CurrentMode) {
         case EscapeMode: // send Escape on release
             PressAndReleaseKey((RichKey){ 0, _Escape } );
@@ -841,7 +854,8 @@ String GetModeString(Mode mode) {
         case ModalNoKeysMode:     return "ModalNoKeys";
         case EscapeMode:          return "Escape";
         case RightCtrlMode:       return "RightCtrl";
-        case NormalMode:          return "Normal";
+        case NormalTypingMode:    return "NormalTyping";
+        case ModalTypingMode:     return "ModalTyping";
         case LeftAltMode:         return "LeftAlt";
         case LeftModMode:         return "LeftMod";
         case RightAltMode:        return "RightAlt";
