@@ -1,4 +1,8 @@
+#include "modal_keys.h"
+#include "keys.h"
 #include "keymap.h"
+#include "helpers.h"
+
 #include <EEPROM.h>
 
 // Map of where in EEPROM storage to store each config variable
@@ -56,6 +60,16 @@ typedef enum {
     Clean = 0,
     Used
 } ModeState;
+
+// specifies action to perform after returning from a call to a KeyMap function with a specific key
+typedef enum {
+    Continue = 0,
+    Stop,
+    Restart
+} ControlCode;
+
+// typedef for functions that map keys to RichKeys
+typedef ControlCode(*KeyMap)(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 
 // ****************************************************************************
 // Function Declarations
@@ -133,7 +147,7 @@ const KeyMap KeyMaps[] = {
     &Escape_keymap,             /* EscapeMode */
     &RightCtrl_keymap,          /* RightCtrlMode */
     &NormalTyping_keymap,       /* NormalTypingMode */
-    &ModalTyping_keymap,       /* ModalTypingMode */
+    &ModalTyping_keymap,        /* ModalTypingMode */
     &LeftAltMode_keymap,        /* LeftAltMode */
     &LeftModMode_keymap,        /* LeftModMode */
     &RightAltMode_keymap,       /* RightAltMode */
@@ -821,25 +835,11 @@ ControlCode MapKey(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     return KeyMaps[CurrentMode](inbuf, i, outbuf);
 }
 
-uint8_t NumKeysPressed(uint8_t buf[8]) {
-    uint8_t count = 0;
-    for (uint8_t i=2; i<8; i++) {
-        if (buf[i]) count++;
-    }
-    return count;
-}
 
-uint8_t NumModsPressed(uint8_t buf[8]) {
-    uint8_t bitset = buf[0];
-    uint8_t count;
-    for (count = 0; bitset; count++)
-        bitset &= bitset - 1;
-    return count;
-}
+// ****************************************************************************
+// Logging
+// ****************************************************************************
 
-uint8_t NumKeysOrModsPressed(uint8_t buf[8]) {
-    return NumModsPressed(buf) + NumKeysPressed(buf);
-}
 
 String GetOSModeString(OSMode osMode) {
     switch (osMode){
