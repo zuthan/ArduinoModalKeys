@@ -28,6 +28,14 @@ bool IsKeyPressedInBuffer(uint8_t key, uint8_t buf[8]) {
     return false;
 }
 
+void OverwriteBufferWithKey(uint8_t buf[8], RichKey key) {
+    buf[0] = key.mods;
+    buf[2] = key.key;
+    for (uint8_t i=3; i<8; i++) {
+        buf[i] = 0;
+    }
+}
+
 void MergeKeyIntoBuffer(RichKey key, uint8_t buf[8]) {
     buf[0] = buf[0] | key.mods;
     for (uint8_t i=2; i<8; i++) {

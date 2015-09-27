@@ -8,6 +8,7 @@ extern uint8_t NumKeysPressed(uint8_t buf[8]);
 extern uint8_t NumModsPressed(uint8_t buf[8]);
 extern uint8_t NumKeysOrModsPressed(uint8_t buf[8]);
 extern bool IsKeyPressedInBuffer(uint8_t key, uint8_t buf[8]);
+extern void OverwriteBufferWithKey(uint8_t buf[8], RichKey key);
 extern void MergeKeyIntoBuffer(RichKey key, uint8_t buf[8]);
 extern bool KeyIntersection(uint8_t buf1[8], uint8_t buf2[8], uint8_t outbuf[8]);
 extern bool ModIntersection(uint8_t buf1[8], uint8_t buf2[8], uint8_t outbuf[8]);

@@ -84,6 +84,8 @@ ControlCode ChangeConfiguration(KeyboardLayout layout, Mode entryPointMode);
 ControlCode SendKey(uint8_t keycode, uint8_t outbuf[8]);
 ControlCode SendModifiers(uint8_t mods, uint8_t outbuf[8]);
 ControlCode SendKeyCombo(uint8_t mods, uint8_t keycode, uint8_t outbuf[8]);
+ControlCode SendOnlyKey(uint8_t keycode, uint8_t outbuf[8]);
+ControlCode SendOnlyKeyCombo(uint8_t mods, uint8_t keycode, uint8_t outbuf[8]);
 ControlCode InvalidKey();
 ControlCode MapKey(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 uint8_t NumKeysPressed(uint8_t buf[8]);
@@ -546,6 +548,7 @@ ControlCode GamingEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[
     // map modifier
     if (i == 0) switch (inbuf[i]) {
         case LGui:        return SendKey(_Escape, outbuf);
+        case LCtrl:       return SendKey(_Backspace, outbuf);
         case LAlt:        return EnterMode(GamingAltMode, Clean);
         case RCtrl:       return EnterMode(RightCtrlMode, Clean);
         default:          return EnterMode(GamingModMode, Used);
@@ -565,8 +568,15 @@ ControlCode GamingEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[
 
 ControlCode GamingMod_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map modifier
-    if (i == 0) switch (inbuf[i]) {
-        case LGui:        return SendKey(_Backspace, outbuf);
+    if (i == 0) {
+        uint8_t key = 0;
+        if (inbuf[i] & LCtrl) {
+            key = _Backspace;
+        }
+
+        uint8_t mods = inbuf[i] & ~LCtrl;
+
+        return SendKeyCombo(mods, key, outbuf);
     }
     // map first key
     if (i == 2) switch (inbuf[i]) {
@@ -579,8 +589,8 @@ ControlCode GamingMod_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
 
 ControlCode GamingBacktick_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map modifier
-    if (i == 0) switch (inbuf[i]) {
-        default:             return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
+    if (i == 0) {
+        return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
     }
     // map any key
     if (i >= 2) switch (inbuf[i]) {
@@ -608,8 +618,8 @@ ControlCode GamingBacktick_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]
 
 ControlCode GamingTab_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
      // map modifier
-    if (i == 0) switch (inbuf[i]) {
-        default:             return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
+    if (i == 0) {
+        return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
     }
     // map any key
     if (i >= 2) switch (inbuf[i]){
@@ -635,30 +645,30 @@ ControlCode GamingTab_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
 
 ControlCode GamingCapsLock_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
      // map modifier
-    if (i == 0) switch (inbuf[i]) {
-        default:             return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
+    if (i == 0) {
+        return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
     }
     // map any key
     if (i >= 2) switch (inbuf[i]){
-        case _CapsLock:      return Continue;
+        case _CapsLock:      return SendModifiers(LCtrl, outbuf);
         case _Space:         return SendModifiers(LShift, outbuf);
          // Space + row0 number ==> ctrl + LH number
-        case _1:             return SendKeyCombo(LCtrl, _1, outbuf);
-        case _2:             return SendKeyCombo(LCtrl, _2, outbuf);
-        case _3:             return SendKeyCombo(LCtrl, _3, outbuf);
-        case _4:             return SendKeyCombo(LCtrl, _4, outbuf);
-        case _5:             return SendKeyCombo(LCtrl, _5, outbuf);
-        // CapsLock + row1 letter ==> RH number
-        case _Q:             return SendKeyCombo(LCtrl, _6, outbuf);
-        case _W:             return SendKeyCombo(LCtrl, _7, outbuf);
-        case _E:             return SendKeyCombo(LCtrl, _8, outbuf);
-        case _R:             return SendKeyCombo(LCtrl, _9, outbuf);
-        case _T:             return SendKeyCombo(LCtrl, _0, outbuf);
+        case _1:             return SendKey(_1, outbuf);
+        case _2:             return SendKey(_2, outbuf);
+        case _3:             return SendKey(_3, outbuf);
+        case _4:             return SendKey(_4, outbuf);
+        case _5:             return SendKey(_5, outbuf);
+        // CapsLock + row1 letter ==> Ctrl + RH number
+        case _Q:             return SendKey(_6, outbuf);
+        case _W:             return SendKey(_7, outbuf);
+        case _E:             return SendKey(_8, outbuf);
+        case _R:             return SendKey(_9, outbuf);
+        case _T:             return SendKey(_0, outbuf);
         // Capslock + row2 letter => misc operations
-        case _A:             return SendKey(_NumpadMinus, outbuf);
-        case _S:             return SendKey(_NumpadPlus, outbuf);
-        case _D:             return SendKey(_Pause, outbuf);
-        case _F:             return SendKey(_Pause, outbuf);
+        case _A:             return SendOnlyKey(_NumpadMinus, outbuf);
+        case _S:             return SendOnlyKey(_NumpadPlus, outbuf);
+        case _D:             return SendOnlyKey(_Pause, outbuf);
+        case _F:             return SendOnlyKey(_Pause, outbuf);
     }
     // all other keys
     return InvalidKey();
@@ -666,13 +676,20 @@ ControlCode GamingCapsLock_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]
 
 ControlCode GamingAlt_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map modifier
-    if (i == 0) switch (inbuf[i]) {
-        case LAlt:           return Continue;
-        default:             return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
+    if (i == 0) {
+        uint8_t key = 0;
+        if (inbuf[i] & LCtrl) {
+            key = _Backspace;
+        }
+
+        uint8_t mods = inbuf[i] & ~LCtrl & ~LAlt;
+
+        return SendKeyCombo(mods, key, outbuf);
     }
     // map any key
     if (i >= 2) switch (inbuf[i]){
         case _Tab:           return EnterMode(AltTabMode, Used);
+        case _CapsLock:      return SendModifiers(LCtrl, outbuf);
         // Space + R1,R2 letter keys ==> navigation keys
         case _Q:             return SendKey(_Home, outbuf);
         case _W:             return SendKey(_PgUp, outbuf);
@@ -699,9 +716,8 @@ ControlCode GamingAlt_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
 
 ControlCode GamingSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map modifier
-    if (i == 0) switch (inbuf[i]) {
-        case LGui:         return SendKey(_Escape, outbuf);
-        default:           return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
+    if (i == 0) {
+        return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
     }
     // map any key
     if (i >= 2) switch (inbuf[i]){
@@ -822,6 +838,16 @@ ControlCode SendModifiers(uint8_t mods, uint8_t outbuf[8]) {
 ControlCode SendKeyCombo(uint8_t mods, uint8_t keycode, uint8_t outbuf[8]) {
     CurrentModeState = Used;
     MergeKeyIntoBuffer((RichKey){ mods, keycode }, outbuf);
+    return Continue;
+}
+
+ControlCode SendOnlyKey(uint8_t keycode, uint8_t outbuf[8]) {
+    return SendOnlyKeyCombo(0, keycode, outbuf);
+}
+
+ControlCode SendOnlyKeyCombo(uint8_t mods, uint8_t keycode, uint8_t outbuf[8]) {
+    CurrentModeState = Used;
+    OverwriteBufferWithKey(outbuf, (RichKey){ mods, keycode });
     return Continue;
 }
 
