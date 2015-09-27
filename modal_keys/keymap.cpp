@@ -346,6 +346,7 @@ ControlCode LeftAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _F:             return EnterMode(LeftModMode, Used);
 
         // Left Hand keys
+        case _Backtick:      return EnterMode(AltTabMode, Used);
         case _Tab:           return EnterMode(AltTabMode, Used);
         case _1:             return SendKey(_F1, outbuf);
         case _2:             return SendKey(_F2, outbuf);
@@ -467,6 +468,8 @@ ControlCode AltTab_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     }
     // map any key
     if (i >= 2) switch (inbuf[i]) {
+        // Tilde
+        case _Backtick:      return SendKey(_Backtick, outbuf);
         // Tab
         case _Tab:           return SendKey(_Tab, outbuf);
         case _Backslash:     return SendKey(_Tab, outbuf);
@@ -688,6 +691,7 @@ ControlCode GamingAlt_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     }
     // map any key
     if (i >= 2) switch (inbuf[i]){
+        case _Backtick:      return EnterMode(AltTabMode, Used);
         case _Tab:           return EnterMode(AltTabMode, Used);
         case _CapsLock:      return SendModifiers(LCtrl, outbuf);
         // Space + R1,R2 letter keys ==> navigation keys
