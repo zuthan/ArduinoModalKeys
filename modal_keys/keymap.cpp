@@ -47,6 +47,7 @@ typedef enum
     GamingTabMode,
     GamingCapsLockMode,
     GamingShiftMode,
+    GamingCtrlMode,
     GamingAltMode,
     GamingSpaceMode
 } Mode;
@@ -117,6 +118,7 @@ ControlCode GamingBacktick_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]
 ControlCode GamingTab_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode GamingCapsLock_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode GamingShift_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode GamingCtrl_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode GamingAlt_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode GamingSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 
@@ -162,6 +164,7 @@ const KeyMap KeyMaps[] = {
     &GamingTab_keymap,          /* GamingTabMode */
     &GamingCapsLock_keymap,     /* GamingCapsLockMode */
     &GamingShift_keymap,        /* GamingShiftMode */
+    &GamingCtrl_keymap,         /* GamingCtrlMode */
     &GamingAlt_keymap,          /* GamingAltMode */
     &GamingSpace_keymap,        /* GamingSpaceMode */
 };
@@ -551,7 +554,7 @@ ControlCode GamingEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[
     // map modifier
     if (i == 0) switch (inbuf[i]) {
         case LShift:      return EnterMode(GamingShiftMode, Clean);
-        case LCtrl:       return SendKey(_Escape, outbuf);
+        case LCtrl:       return EnterMode(GamingCtrlMode, Clean);
         case LGui:        return SendKey(_Backspace, outbuf);
         case LAlt:        return EnterMode(GamingAltMode, Clean);
         case RCtrl:       return EnterMode(RightCtrlMode, Clean);
@@ -690,6 +693,30 @@ ControlCode GamingShift_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
 }
 
+ControlCode GamingCtrl_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+    // map modifier
+    if (i == 0) {
+        if (inbuf[i] == LCtrl) {
+            return Continue;
+        }
+
+        uint8_t key = 0;
+        if (inbuf[i] & LGui) {
+            key = _Backspace;
+        }
+
+        uint8_t mods = inbuf[i] & ~LGui;
+
+        return SendKeyCombo(mods, key, outbuf);
+    }
+    // map subsequent keys
+    if (i >= 2) {
+        uint8_t mods = inbuf[0] & ~LGui;
+        uint8_t key = inbuf[i];
+        return SendKeyCombo(mods, key, outbuf);
+    }
+}
+
 ControlCode GamingAlt_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map modifier
     if (i == 0) {
@@ -797,6 +824,9 @@ void HandleLastKeyReleased() {
             break;
         case GamingTabMode: // send Tab on release
             PressAndReleaseKey((RichKey){ 0, _Tab } );
+            break;
+        case GamingCtrlMode: // send Escape on release
+            PressAndReleaseKey((RichKey){ 0, _Escape } );
             break;
         case GamingAltMode: // send LAlt on release
             PressAndReleaseKey((RichKey){ LAlt, 0 } );
@@ -912,6 +942,7 @@ String GetModeString(Mode mode) {
         case GamingTabMode:       return "GamingTab";
         case GamingCapsLockMode:  return "GamingCapsLock";
         case GamingShiftMode:     return "GamingShift";
+        case GamingCtrlMode:       return "GamingCtrl";
         case GamingAltMode:       return "GamingAlt";
         case GamingSpaceMode:     return "GamingSpace";
         default:                  return "<unknown>";
