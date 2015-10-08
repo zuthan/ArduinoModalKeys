@@ -241,9 +241,9 @@ ControlCode Escape_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
 ControlCode RightCtrl_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map modifier
     if (i == 0) switch (inbuf[i]) {
-        case RCtrl:       return Continue;
-        case LCtrl:       return ChangeOSMode(Windows);
-        case LGui:        return ChangeOSMode(OSX);
+        case RCtrl:               return Continue;
+        case RCtrl | LCtrl:       return ChangeOSMode(Windows);
+        case RCtrl | LGui:        return ChangeOSMode(OSX);
     }
 
      // map first key
