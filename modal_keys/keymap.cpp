@@ -524,6 +524,8 @@ ControlCode NumPad_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _8:                    return SendKey(_Numpad8, outbuf);
         case _9:                    return SendKey(_Numpad9, outbuf);
         case _0:                    return SendKey(_NumpadTimes, outbuf);
+        case _Dash:                 return SendKey(_VolumeDown, outbuf);
+        case _Equals:               return SendKey(_VolumeUp, outbuf);
         case _U:                    return SendKey(_Numpad4, outbuf);
         case _I:                    return SendKey(_Numpad5, outbuf);
         case _O:                    return SendKey(_Numpad6, outbuf);
