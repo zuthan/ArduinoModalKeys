@@ -479,7 +479,14 @@ ControlCode AltTab_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         // Shift
         case _Q:             return SendModifiers(LShift, outbuf);
         case _P:             return SendModifiers(RShift, outbuf);
+        // Escape
+        case _Escape:        return SendKey(_Escape, outbuf);
+        case _Y:             return SendKey(_Escape, outbuf);
         // arrow keys
+        case _Left:          return SendKey(_Left, outbuf);
+        case _Up:            return SendKey(_Up, outbuf);
+        case _Down:          return SendKey(_Down, outbuf);
+        case _Right:         return SendKey(_Right, outbuf);
         case _J:             return SendKey(_Left, outbuf);
         case _K:             return SendKey(_Up, outbuf);
         case _L:             return SendKey(_Down, outbuf);
