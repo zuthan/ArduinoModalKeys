@@ -49,7 +49,10 @@ typedef enum
     GamingShiftMode,
     GamingCtrlMode,
     GamingAltMode,
-    GamingSpaceMode
+    GamingSpaceMode,
+    BlackDesertNoKeysMode,
+    BlackDesertCapsLockMode,
+    BlackDesertSpaceMode
 } Mode;
 
 typedef enum {
@@ -122,6 +125,10 @@ ControlCode GamingCtrl_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode GamingAlt_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode GamingSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 
+ControlCode BlackDesertEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode BlackDesertCapsLock_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode BlackDesertSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+
 // state handling callbacks
 void HandleLastKeyReleased();
 
@@ -146,27 +153,30 @@ const uint8_t *Keymap[] =
 
 // array of KeyMaps, one for each mode
 const KeyMap KeyMaps[] = {
-    &NormalEntryPoint_keymap,   /* NormalNoKeysMode */
-    &ModalEntryPoint_keymap,    /* ModalNoKeysMode */
-    &Escape_keymap,             /* EscapeMode */
-    &RightCtrl_keymap,          /* RightCtrlMode */
-    &NormalTyping_keymap,       /* NormalTypingMode */
-    &ModalTyping_keymap,        /* ModalTypingMode */
-    &LeftAltMode_keymap,        /* LeftAltMode */
-    &LeftModMode_keymap,        /* LeftModMode */
-    &RightAltMode_keymap,       /* RightAltMode */
-    &RightModMode_keymap,       /* RightModMode */
-    &AltTab_keymap,             /* AltTabMode */
-    &WindowSnap_keymap,         /* WindowSnapMode */
-    &NumPad_keymap,             /* NumPadMode */
-    &GamingEntryPoint_keymap,   /* GamingNoKeysMode */
-    &GamingBacktick_keymap,     /* GamingBacktickMode */
-    &GamingTab_keymap,          /* GamingTabMode */
-    &GamingCapsLock_keymap,     /* GamingCapsLockMode */
-    &GamingShift_keymap,        /* GamingShiftMode */
-    &GamingCtrl_keymap,         /* GamingCtrlMode */
-    &GamingAlt_keymap,          /* GamingAltMode */
-    &GamingSpace_keymap,        /* GamingSpaceMode */
+    &NormalEntryPoint_keymap,       /* NormalNoKeysMode */
+    &ModalEntryPoint_keymap,        /* ModalNoKeysMode */
+    &Escape_keymap,                 /* EscapeMode */
+    &RightCtrl_keymap,              /* RightCtrlMode */
+    &NormalTyping_keymap,           /* NormalTypingMode */
+    &ModalTyping_keymap,            /* ModalTypingMode */
+    &LeftAltMode_keymap,            /* LeftAltMode */
+    &LeftModMode_keymap,            /* LeftModMode */
+    &RightAltMode_keymap,           /* RightAltMode */
+    &RightModMode_keymap,           /* RightModMode */
+    &AltTab_keymap,                 /* AltTabMode */
+    &WindowSnap_keymap,             /* WindowSnapMode */
+    &NumPad_keymap,                 /* NumPadMode */
+    &GamingEntryPoint_keymap,       /* GamingNoKeysMode */
+    &GamingBacktick_keymap,         /* GamingBacktickMode */
+    &GamingTab_keymap,              /* GamingTabMode */
+    &GamingCapsLock_keymap,         /* GamingCapsLockMode */
+    &GamingShift_keymap,            /* GamingShiftMode */
+    &GamingCtrl_keymap,             /* GamingCtrlMode */
+    &GamingAlt_keymap,              /* GamingAltMode */
+    &GamingSpace_keymap,            /* GamingSpaceMode */
+    &BlackDesertEntryPoint_keymap,  /* BlackDesertNoKeysMode */
+    &BlackDesertCapsLock_keymap,    /* BlackDesertCapsLockMode */
+    &BlackDesertSpace_keymap       /* BlackDesertSpaceMode */
 };
 
 // ****************************************************************************
@@ -233,6 +243,7 @@ ControlCode Escape_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _F1:        return ChangeConfiguration(qwerty, NormalNoKeysMode);
         case _F2:        return ChangeConfiguration(dvorak, ModalNoKeysMode);
         case _F3:        return ChangeConfiguration(qwerty, GamingNoKeysMode);
+        case _F4:        return ChangeConfiguration(qwerty, BlackDesertNoKeysMode);
     }
     // all other keys
     return InvalidKey();
@@ -251,6 +262,7 @@ ControlCode RightCtrl_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _1:        return ChangeConfiguration(qwerty, NormalNoKeysMode);
         case _2:        return ChangeConfiguration(dvorak, ModalNoKeysMode);
         case _3:        return ChangeConfiguration(qwerty, GamingNoKeysMode);
+        case _4:        return ChangeConfiguration(qwerty, BlackDesertNoKeysMode);
     }
     // all other keys
     return EnterMode(NormalTypingMode, Used);
@@ -643,7 +655,6 @@ ControlCode GamingTab_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     return InvalidKey();
 }
 
-
 ControlCode GamingCapsLock_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map modifier
     if (i == 0) {
@@ -803,7 +814,112 @@ ControlCode GamingSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _C:             return SendOnlyKey(_Pause, outbuf);
         case _V:             return SendOnlyKey(_Pause, outbuf);
         case _B:             return SendOnlyKey(_Pause, outbuf);
+    }
+    // all other keys
+    return InvalidKey();
+}
 
+
+// ================== BlackDesert Mode ===================
+
+ControlCode BlackDesertEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+    // map modifier
+    if (i == 0) switch (inbuf[i]) {
+        case LCtrl:       return SendKey(_Escape, outbuf);
+        case LGui:        return SendKey(_Backspace, outbuf);
+        case RCtrl:       return EnterMode(RightCtrlMode, Clean);
+        default:          return Stop;
+    }
+    // map first key
+    if (i == 2) switch (inbuf[i]) {
+        case _Escape:     return EnterMode(EscapeMode, Clean);
+        // LH function keys ==> RH function keys
+        case _F1:             return SendKey(_F7, outbuf);
+        case _F2:             return SendKey(_F8, outbuf);
+        case _F3:             return SendKey(_F9, outbuf);
+        case _F4:             return SendKey(_F10, outbuf);
+        case _F5:             return SendKey(_F11, outbuf);
+        case _F6:             return SendKey(_F12, outbuf);
+        // LH numbers ==> LH function keys
+        case _1:          return SendKey(_F1, outbuf);
+        case _2:          return SendKey(_F2, outbuf);
+        case _3:          return SendKey(_F3, outbuf);
+        case _4:          return SendKey(_F4, outbuf);
+        case _5:          return SendKey(_F5, outbuf);
+        case _6:          return SendKey(_F6, outbuf);
+        // custom modifiers
+        case _CapsLock:   return EnterMode(BlackDesertCapsLockMode, Clean);
+        case _Space:      return EnterMode(BlackDesertSpaceMode, Clean);
+    }
+    // all other keys
+    return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
+}
+
+ControlCode BlackDesertCapsLock_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+    // map modifier
+    if (i == 0) {
+        return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
+    }
+    // map any key
+    if (i >= 2) switch (inbuf[i]){
+        case _CapsLock:      return Continue;
+        case _Space:         return SendModifiers(LCtrl, outbuf);
+        // CapsLock + R1 letter keys ==> LH number
+        case _Q:             return SendKey(_P, outbuf);
+        case _W:             return SendKey(_O, outbuf);
+        case _E:             return SendKey(_I, outbuf);
+        case _R:             return SendKey(_U, outbuf);
+        case _T:             return SendKey(_Y, outbuf);
+        // CapsLock + R2 letter keys ==> RH number
+        case _A:             return SendKey(_Semicolon, outbuf);
+        case _S:             return SendKey(_L, outbuf);
+        case _D:             return SendKey(_K, outbuf);
+        case _F:             return SendKey(_J, outbuf);
+        case _G:             return SendKey(_H, outbuf);
+        // CapsLock + R3 letter keys ==> misc extras
+        case _Z:             return SendKey(_Fullstop, outbuf);
+        case _X:             return SendKey(_Comma, outbuf);
+        case _C:             return SendKey(_M, outbuf);
+        case _V:             return SendKey(_N, outbuf);
+        case _B:             return SendKey(_B, outbuf);
+    }
+    // all other keys
+    return InvalidKey();
+}
+
+ControlCode BlackDesertSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+    // map modifier
+    if (i == 0) {
+        return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
+    }
+    // map any key
+    if (i >= 2) switch (inbuf[i]){
+        case _Space:         return Continue;
+         // Space + row0 number ==> ctrl + LH function key
+        case _1:             return SendKey(_F7, outbuf);
+        case _2:             return SendKey(_F8, outbuf);
+        case _3:             return SendKey(_F9, outbuf);
+        case _4:             return SendKey(_F10, outbuf);
+        case _5:             return SendKey(_F11, outbuf);
+        case _6:             return SendKey(_F12, outbuf);
+        // Space + R1 letter keys ==> LH number
+        case _Q:             return SendKey(_1, outbuf);
+        case _W:             return SendKey(_2, outbuf);
+        case _E:             return SendKey(_3, outbuf);
+        case _R:             return SendKey(_4, outbuf);
+        case _T:             return SendKey(_5, outbuf);
+        // Space + R2 letter keys ==> RH number
+        case _A:             return SendKey(_6, outbuf);
+        case _S:             return SendKey(_7, outbuf);
+        case _D:             return SendKey(_8, outbuf);
+        case _F:             return SendKey(_9, outbuf);
+        case _G:             return SendKey(_0, outbuf);
+        // Space + R3 letter keys ==> misc extras
+        case _Z:             return SendOnlyKey(_Left, outbuf);
+        case _X:             return SendOnlyKey(_Up, outbuf);
+        case _C:             return SendOnlyKey(_Down, outbuf);
+        case _V:             return SendOnlyKey(_Right, outbuf);
+        case _B:             return SendOnlyKey(_CapsLock, outbuf);
     }
     // all other keys
     return InvalidKey();
@@ -841,6 +957,12 @@ void HandleLastKeyReleased() {
             PressAndReleaseKey((RichKey){ LAlt, 0 } );
             break;
         case GamingSpaceMode: // send Space on release
+            PressAndReleaseKey((RichKey){ 0, _Space } );
+            break;
+        case BlackDesertCapsLockMode: // send Ctrl on release
+            PressAndReleaseKey((RichKey){ LCtrl, 0 } );
+            break;
+        case BlackDesertSpaceMode: // send Space on release
             PressAndReleaseKey((RichKey){ 0, _Space } );
             break;
     }
@@ -933,28 +1055,31 @@ String GetOSModeString(OSMode osMode) {
 
 String GetModeString(Mode mode) {
     switch (mode){
-        case NormalNoKeysMode:    return "NormalNoKeys";
-        case ModalNoKeysMode:     return "ModalNoKeys";
-        case EscapeMode:          return "Escape";
-        case RightCtrlMode:       return "RightCtrl";
-        case NormalTypingMode:    return "NormalTyping";
-        case ModalTypingMode:     return "ModalTyping";
-        case LeftAltMode:         return "LeftAlt";
-        case LeftModMode:         return "LeftMod";
-        case RightAltMode:        return "RightAlt";
-        case RightModMode:        return "RightMod";
-        case AltTabMode:          return "AltTab";
-        case WindowSnapMode:      return "WindowSnap";
-        case NumPadMode:          return "NumPad";
-        case GamingNoKeysMode:    return "GamingNoKeys";
-        case GamingBacktickMode:  return "GamingBacktick";
-        case GamingTabMode:       return "GamingTab";
-        case GamingCapsLockMode:  return "GamingCapsLock";
-        case GamingShiftMode:     return "GamingShift";
-        case GamingCtrlMode:       return "GamingCtrl";
-        case GamingAltMode:       return "GamingAlt";
-        case GamingSpaceMode:     return "GamingSpace";
-        default:                  return "<unknown>";
+        case NormalNoKeysMode:        return "NormalNoKeys";
+        case ModalNoKeysMode:         return "ModalNoKeys";
+        case EscapeMode:              return "Escape";
+        case RightCtrlMode:           return "RightCtrl";
+        case NormalTypingMode:        return "NormalTyping";
+        case ModalTypingMode:         return "ModalTyping";
+        case LeftAltMode:             return "LeftAlt";
+        case LeftModMode:             return "LeftMod";
+        case RightAltMode:            return "RightAlt";
+        case RightModMode:            return "RightMod";
+        case AltTabMode:              return "AltTab";
+        case WindowSnapMode:          return "WindowSnap";
+        case NumPadMode:              return "NumPad";
+        case GamingNoKeysMode:        return "GamingNoKeys";
+        case GamingBacktickMode:      return "GamingBacktick";
+        case GamingTabMode:           return "GamingTab";
+        case GamingCapsLockMode:      return "GamingCapsLock";
+        case GamingShiftMode:         return "GamingShift";
+        case GamingCtrlMode:          return "GamingCtrl";
+        case GamingAltMode:           return "GamingAlt";
+        case GamingSpaceMode:         return "GamingSpace";
+        case BlackDesertNoKeysMode:   return "BlackDesertNoKeys";
+        case BlackDesertCapsLockMode: return "BlackDesertCapsLock";
+        case BlackDesertSpaceMode:    return "BlackDesertSpace";
+        default:                      return "<unknown>";
     }
 }
 
