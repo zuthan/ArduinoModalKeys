@@ -513,7 +513,7 @@ ControlCode AltTab_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
 
 ControlCode WindowSnap_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // exit condition: first key pressed is no longer _C
-    if (inbuf[2] != _C) return EnterMode(ModalNoKeysMode, Used);
+    if (inbuf[2] != _C) return EnterMode(LeftAltMode, Used);
 
     // map modifier
     if (i == 0) switch (inbuf[i]) {
