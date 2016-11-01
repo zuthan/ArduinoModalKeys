@@ -52,7 +52,8 @@ typedef enum
     GamingSpaceMode,
     BlackDesertNoKeysMode,
     BlackDesertCapsLockMode,
-    BlackDesertSpaceMode
+    BlackDesertSpaceMode,
+    BlackDesertAltMode
 } Mode;
 
 typedef enum {
@@ -128,6 +129,7 @@ ControlCode GamingSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode BlackDesertEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode BlackDesertCapsLock_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode BlackDesertSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode BlackDesertAlt_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 
 // state handling callbacks
 void HandleLastKeyReleased();
@@ -176,7 +178,8 @@ const KeyMap KeyMaps[] = {
     &GamingSpace_keymap,            /* GamingSpaceMode */
     &BlackDesertEntryPoint_keymap,  /* BlackDesertNoKeysMode */
     &BlackDesertCapsLock_keymap,    /* BlackDesertCapsLockMode */
-    &BlackDesertSpace_keymap       /* BlackDesertSpaceMode */
+    &BlackDesertSpace_keymap,       /* BlackDesertSpaceMode */
+    &BlackDesertAlt_keymap          /* BlackDesertAltMode */
 };
 
 // ****************************************************************************
@@ -772,7 +775,6 @@ ControlCode GamingAlt_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _C:             return SendKey(_Delete, outbuf);
         case _V:             return SendKey(_LeftBracket, outbuf);
         case _B:             return SendKey(_RightBracket, outbuf);
-
     }
     // all other keys
     return InvalidKey();
@@ -826,9 +828,10 @@ ControlCode BlackDesertEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t ou
     // map modifier
     if (i == 0) switch (inbuf[i]) {
         case LCtrl:       return SendKey(_Escape, outbuf);
-        case LGui:        return SendKey(_Backspace, outbuf);
+        case LGui:        return SendKey(_Enter, outbuf);
+        case LAlt:        return EnterMode(BlackDesertAltMode, Clean);
         case RCtrl:       return EnterMode(RightCtrlMode, Clean);
-        default:          return Stop;
+        default:          return EnterMode(NormalTypingMode, Used);
     }
     // map first key
     if (i == 2) switch (inbuf[i]) {
@@ -841,6 +844,7 @@ ControlCode BlackDesertEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t ou
         case _F5:             return SendKey(_F11, outbuf);
         case _F6:             return SendKey(_F12, outbuf);
         // LH numbers ==> LH function keys
+        case _Backtick:   return SendKey(_Insert, outbuf);
         case _1:          return SendKey(_F1, outbuf);
         case _2:          return SendKey(_F2, outbuf);
         case _3:          return SendKey(_F3, outbuf);
@@ -923,6 +927,20 @@ ControlCode BlackDesertSpace_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[
     }
     // all other keys
     return InvalidKey();
+}
+
+ControlCode BlackDesertAlt_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+    // map modifier
+    if (i == 0) {
+        return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
+    }
+    // map any key
+    if (i >= 2) switch (inbuf[i]){
+        case _Backtick:      return EnterMode(AltTabMode, Used);
+        case _Tab:           return EnterMode(AltTabMode, Used);
+    }
+    // all other keys
+    return EnterMode(NormalTypingMode, Used);
 }
 
 // ****************************************************************************
@@ -1079,6 +1097,7 @@ String GetModeString(Mode mode) {
         case BlackDesertNoKeysMode:   return "BlackDesertNoKeys";
         case BlackDesertCapsLockMode: return "BlackDesertCapsLock";
         case BlackDesertSpaceMode:    return "BlackDesertSpace";
+        case BlackDesertAltMode:      return "BlackDesertAlt";
         default:                      return "<unknown>";
     }
 }
