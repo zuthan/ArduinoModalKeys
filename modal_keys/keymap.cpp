@@ -91,6 +91,7 @@ ControlCode SendModifiers(uint8_t mods, uint8_t outbuf[8]);
 ControlCode SendKeyCombo(uint8_t mods, uint8_t keycode, uint8_t outbuf[8]);
 ControlCode SendOnlyKey(uint8_t keycode, uint8_t outbuf[8]);
 ControlCode SendOnlyKeyCombo(uint8_t mods, uint8_t keycode, uint8_t outbuf[8]);
+ControlCode SendRichKey(RichKey key, uint8_t outbuf[8]);
 ControlCode InvalidKey();
 ControlCode MapKey(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 uint8_t NumKeysPressed(uint8_t buf[8]);
@@ -203,6 +204,13 @@ uint8_t CapsLockMod() {
     }
 }
 
+RichKey LCtrlMod() {
+    switch(CurrentOSMode){
+        case Windows: return (RichKey){ 0, _Escape };
+        case OSX: return (RichKey) { LCtrl, 0 };
+    }
+}
+
 uint8_t AppSwitchModifierKeycode(Side side) {
     switch (side) {
         case Left:
@@ -304,9 +312,10 @@ ControlCode ModalEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8
 }
 
 ControlCode mapNormalKeyToCurrentLayout(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
-    // map modifier
+    // map modifiers
     if (i == 0) {
-        return SendModifiers(inbuf[i], outbuf);
+        if (inbuf[0] & LCtrl) SendRichKey(LCtrlMod(), outbuf); //map LCtrl to OS-specific key
+        return SendModifiers(inbuf[0] & ~LCtrl, outbuf);
     }
     // map key
     if (i >= 2) {
@@ -316,7 +325,7 @@ ControlCode mapNormalKeyToCurrentLayout(uint8_t inbuf[8], uint8_t i, uint8_t out
         }
         // lookup key for current keyboard layout
         if (inkey >= _A && inkey <= _CapsLock){
-            uint8_t outkey = Keymap[CurrentLayout][inkey-4];
+            uint8_t outkey = Keymap[CurrentLayout][inkey - _A];
             return SendKey(outkey, outbuf);
         }
 
@@ -1045,6 +1054,12 @@ ControlCode SendOnlyKey(uint8_t keycode, uint8_t outbuf[8]) {
 ControlCode SendOnlyKeyCombo(uint8_t mods, uint8_t keycode, uint8_t outbuf[8]) {
     CurrentModeState = Used;
     OverwriteBufferWithKey(outbuf, (RichKey){ mods, keycode });
+    return Continue;
+}
+
+ControlCode SendRichKey(RichKey key, uint8_t outbuf[8]) {
+    CurrentModeState = Used;
+    MergeKeyIntoBuffer(key, outbuf);
     return Continue;
 }
 
