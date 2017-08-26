@@ -149,6 +149,13 @@ struct RichKey {
     uint8_t flags;
 };
 
+struct KeySpec {
+    uint8_t shift1; // shift modifiers when shift is not pressed
+    uint8_t key1; // the key to map to when shift is not pressed
+    uint8_t shift2; // shift modifiers when shift is pressed
+    uint8_t key2; // the key to map to when shift is pressed
+};
+
 bool operator==(const RichKey& lhs, const RichKey& rhs);
 
 #endif // __KEYS_H_

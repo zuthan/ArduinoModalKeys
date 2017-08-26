@@ -2,6 +2,9 @@
 #include "keys.h"
 #include "keymap.h"
 #include "helpers.h"
+#include "layout_qwerty.h"
+#include "layout_dvorak.h"
+#include "layout_dvorak_programmer.h"
 
 #include <EEPROM.h>
 
@@ -23,7 +26,7 @@ typedef enum {
 typedef enum {
     qwerty = 0,
     dvorak,
-    colemak
+    dvorakProgrammer
 } KeyboardLayout;
 
 // the available keyboard modes
@@ -66,15 +69,15 @@ typedef enum {
     Used
 } ModeState;
 
-// specifies action to perform after returning from a call to a KeyMap function with a specific key
+// specifies action to perform after returning from a call to a KeyMapFunc function with a specific key
 typedef enum {
     Continue = 0,
     Stop,
     Restart
 } ControlCode;
 
-// typedef for functions that map keys to RichKeys
-typedef ControlCode(*KeyMap)(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+// typedef for functions that specify a key mapping
+typedef ControlCode(*KeyMapFunc)(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 
 // ****************************************************************************
 // Function Declarations
@@ -88,6 +91,7 @@ ControlCode EnterMode(Mode mode, ModeState modeState);
 ControlCode ChangeConfiguration(KeyboardLayout layout, Mode entryPointMode);
 ControlCode SendKey(uint8_t keycode, uint8_t outbuf[8]);
 ControlCode SendModifiers(uint8_t mods, uint8_t outbuf[8]);
+ControlCode UnsetModifiers(uint8_t mods, uint8_t outbuf[8]);
 ControlCode SendKeyCombo(uint8_t mods, uint8_t keycode, uint8_t outbuf[8]);
 ControlCode SendOnlyKey(uint8_t keycode, uint8_t outbuf[8]);
 ControlCode SendOnlyKeyCombo(uint8_t mods, uint8_t keycode, uint8_t outbuf[8]);
@@ -142,20 +146,16 @@ void HandleLastKeyReleased();
 const RichKey NoKey = { 0, 0, 0 };
 const RichKey CustomModifierKey = { 0, 0, _CustomModifier };
 
-// Keymap based on the scancodes from 4 to 57, refer to the HID usage table on the meaning of each element
-const uint8_t qwertyKeymap[]  = {4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57};
-const uint8_t dvorakKeymap[]  = {4, 27, 13,  8, 55, 24, 12,  7,  6, 11, 23, 17, 16,  5, 21, 15, 52, 19, 18, 28, 10, 14, 54, 20,  9, 51, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 47, 48, 56, 46, 49, 50, 22, 45, 53, 26, 25, 29, 57};
-const uint8_t colemakKeymap[] = {4,  5,  6, 22,  9, 23,  7, 11, 24, 17,  8, 12, 16, 14, 28, 51, 20, 19, 21, 10, 15, 25, 26, 27, 13, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 18, 52, 53, 54, 55, 56, 42};
-
-const uint8_t *Keymap[] =
+// Keymaps
+const KeySpec *Keymap[] =
 {
     qwertyKeymap,
     dvorakKeymap,
-    colemakKeymap
+    dvorakProgrammerKeymap
 };
 
-// array of KeyMaps, one for each mode
-const KeyMap KeyMaps[] = {
+// array of KeyMapFuncs, one for each mode
+const KeyMapFunc KeyMaps[] = {
     &NormalEntryPoint_keymap,       /* NormalNoKeysMode */
     &ModalEntryPoint_keymap,        /* ModalNoKeysMode */
     &Escape_keymap,                 /* EscapeMode */
@@ -187,7 +187,7 @@ const KeyMap KeyMaps[] = {
 // Variables
 // ****************************************************************************
 
-KeyboardLayout CurrentLayout = dvorak;
+KeyboardLayout CurrentLayout = dvorakProgrammer;
 Mode EntryPointMode = ModalNoKeysMode;
 Mode CurrentMode = ModalNoKeysMode;
 OSMode CurrentOSMode = Windows;
@@ -197,16 +197,16 @@ ModeState CurrentModeState = Clean;
 // State Dependant Values
 // ****************************************************************************
 
-uint8_t CapsLockMod() {
+RichKey CapsLockMod() {
     switch(CurrentOSMode){
-        case Windows: return LCtrl;
-        case OSX: return LGui;
+        case Windows: return (RichKey){ 0, _Escape };
+        case OSX: return (RichKey) { LGui, 0 };
     }
 }
 
 RichKey LCtrlMod() {
     switch(CurrentOSMode){
-        case Windows: return (RichKey){ 0, _Escape };
+        case Windows: return (RichKey) { LCtrl, 0 };
         case OSX: return (RichKey) { LCtrl, 0 };
     }
 }
@@ -252,7 +252,7 @@ ControlCode Escape_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     if (i >= 2) switch (inbuf[i]) {
         case _Escape:    return Continue;
         case _F1:        return ChangeConfiguration(qwerty, NormalNoKeysMode);
-        case _F2:        return ChangeConfiguration(dvorak, ModalNoKeysMode);
+        case _F2:        return ChangeConfiguration(dvorakProgrammer, ModalNoKeysMode);
         case _F3:        return ChangeConfiguration(qwerty, GamingNoKeysMode);
         case _F4:        return ChangeConfiguration(qwerty, BlackDesertNoKeysMode);
     }
@@ -271,7 +271,7 @@ ControlCode RightCtrl_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
      // map first key
     if (i == 2) switch (inbuf[i]) {
         case _1:        return ChangeConfiguration(qwerty, NormalNoKeysMode);
-        case _2:        return ChangeConfiguration(dvorak, ModalNoKeysMode);
+        case _2:        return ChangeConfiguration(dvorakProgrammer, ModalNoKeysMode);
         case _3:        return ChangeConfiguration(qwerty, GamingNoKeysMode);
         case _4:        return ChangeConfiguration(qwerty, BlackDesertNoKeysMode);
     }
@@ -321,12 +321,16 @@ ControlCode mapNormalKeyToCurrentLayout(uint8_t inbuf[8], uint8_t i, uint8_t out
     if (i >= 2) {
         uint8_t inkey = inbuf[i];
         switch (inkey){
-            case _CapsLock:         return SendModifiers(CapsLockMod(), outbuf);
+            case _CapsLock:         return SendRichKey(CapsLockMod(), outbuf);
         }
         // lookup key for current keyboard layout
         if (inkey >= _A && inkey <= _CapsLock){
-            uint8_t outkey = Keymap[CurrentLayout][inkey - _A];
-            return SendKey(outkey, outbuf);
+            uint8_t shiftOn = outbuf[0] & (LShift | RShift);
+            UnsetModifiers(LShift | RShift, outbuf);
+            KeySpec keySpec = Keymap[CurrentLayout][inkey - _A];
+            uint8_t mappedShift = shiftOn ? keySpec.shift2 : keySpec.shift1;
+            uint8_t mappedKey = shiftOn ? keySpec.key2 : keySpec.key1;
+            return SendKeyCombo(mappedShift, mappedKey, outbuf);
         }
 
         return SendKey(inkey, outbuf);
@@ -425,6 +429,15 @@ ControlCode LeftModMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _S:             return SendModifiers(LAlt, outbuf);
         case _D:             return SendModifiers(LCtrl, outbuf);
         case _F:             return SendModifiers(LGui, outbuf);
+        // Right hand keys
+        case _7:             return SendKey(_7, outbuf);
+        case _8:             return SendKey(_8, outbuf);
+        case _9:             return SendKey(_9, outbuf);
+        case _0:             return SendKey(_0, outbuf);
+        case _Dash:          return SendKey(_LeftBracket, outbuf);
+        case _Equals:        return SendKey(_RightBracket, outbuf);
+        case _LeftBracket:   return SendKey(_ForwardSlash, outbuf);
+        case _RightBracket:  return SendKey(_Equals, outbuf);
     }
     // all other keys
     return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
@@ -478,6 +491,14 @@ ControlCode RightModMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) 
         case _K:             return SendModifiers(RCtrl, outbuf);
         case _L:             return SendModifiers(LAlt, outbuf); // RAlt is treated as Alt Grave and doesn't work as Meta key sometimes on Linux
         case _Semicolon:     return SendModifiers(RShift, outbuf);
+        // Left Hand keys
+        case _Backtick:      return SendKey(_Backtick, outbuf);
+        case _1:             return SendKey(_1, outbuf);
+        case _2:             return SendKey(_2, outbuf);
+        case _3:             return SendKey(_3, outbuf);
+        case _4:             return SendKey(_4, outbuf);
+        case _5:             return SendKey(_5, outbuf);
+        case _6:             return SendKey(_6, outbuf);
     }
     // all other keys
     return mapNormalKeyToCurrentLayout(inbuf, i, outbuf);
@@ -1041,6 +1062,11 @@ ControlCode SendModifiers(uint8_t mods, uint8_t outbuf[8]) {
     return SendKeyCombo(mods, 0, outbuf);
 }
 
+ControlCode UnsetModifiers(uint8_t mods, uint8_t outbuf[8]) {
+    outbuf[0] &= ~mods;
+    return Continue;
+}
+
 ControlCode SendKeyCombo(uint8_t mods, uint8_t keycode, uint8_t outbuf[8]) {
     CurrentModeState = Used;
     MergeKeyIntoBuffer((RichKey){ mods, keycode }, outbuf);
@@ -1125,7 +1151,7 @@ String GetLayoutString(KeyboardLayout layout) {
     switch (layout){
         case qwerty:    return "QY";
         case dvorak:    return "DV";
-        case colemak:   return "CM";
+        case dvorakProgrammer:   return "DVP";
     }
 }
 
