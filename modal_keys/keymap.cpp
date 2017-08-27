@@ -487,6 +487,20 @@ ControlCode RightAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) 
         case _4:             return SendKey(_F4, outbuf);
         case _5:             return SendKey(_F5, outbuf);
         case _6:             return SendKey(_F6, outbuf);
+        // left numpad
+        case _Q:             return SendKey(_Equals, outbuf);
+        case _A:             return SendKey(_Dash, outbuf);
+        case _W:             return SendKey(_1, outbuf);
+        case _E:             return SendKey(_2, outbuf);
+        case _R:             return SendKey(_3, outbuf);
+        case _S:             return SendKey(_4, outbuf);
+        case _D:             return SendKey(_5, outbuf);
+        case _F:             return SendKey(_6, outbuf);
+        case _Z:             return SendKey(_7, outbuf);
+        case _X:             return SendKey(_8, outbuf);
+        case _C:             return SendKey(_9, outbuf);
+        case _Space:         return SendKey(_0, outbuf);
+
         // Right Hand keys
         case _Backslash:     return EnterMode(AltTabMode, Used);
     }
