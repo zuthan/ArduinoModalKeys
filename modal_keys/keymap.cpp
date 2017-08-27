@@ -35,6 +35,7 @@ typedef enum
     NormalNoKeysMode = 0,
     ModalNoKeysMode,
     EscapeMode,
+    CapsLockMode,
     RightCtrlMode,
     NormalTypingMode,
     ModalTypingMode,
@@ -110,6 +111,7 @@ String GetLayoutString(KeyboardLayout layout);
 ControlCode NormalEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode ModalEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode Escape_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
+ControlCode CapsLock_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 ControlCode RightCtrl_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
 
 ControlCode NormalTyping_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]);
@@ -159,6 +161,7 @@ const KeyMapFunc KeyMaps[] = {
     &NormalEntryPoint_keymap,       /* NormalNoKeysMode */
     &ModalEntryPoint_keymap,        /* ModalNoKeysMode */
     &Escape_keymap,                 /* EscapeMode */
+    &CapsLock_keymap,               /* CapsLockMode */
     &RightCtrl_keymap,              /* RightCtrlMode */
     &NormalTyping_keymap,           /* NormalTypingMode */
     &ModalTyping_keymap,            /* ModalTypingMode */
@@ -199,7 +202,7 @@ ModeState CurrentModeState = Clean;
 
 RichKey CapsLockMod() {
     switch(CurrentOSMode){
-        case Windows: return (RichKey){ 0, _Escape };
+        case Windows: return (RichKey){ LCtrl, 0 };
         case OSX: return (RichKey) { LGui, 0 };
     }
 }
@@ -260,6 +263,21 @@ ControlCode Escape_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     return InvalidKey();
 }
 
+ControlCode CapsLock_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
+    // map modifier
+    if (i == 0) switch (inbuf[i]) {
+
+    }
+
+     // map first key
+    if (i == 2) switch (inbuf[i]) {
+        case _CapsLock:         return Continue;
+    }
+
+    // all other keys
+    return EnterMode(NormalTypingMode, Used);
+}
+
 ControlCode RightCtrl_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // map modifier
     if (i == 0) switch (inbuf[i]) {
@@ -304,7 +322,8 @@ ControlCode ModalEntryPoint_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8
 
     // key entry points
     if (i == 2) switch (inbuf[i]) {
-        case _Escape:  return EnterMode(EscapeMode, Clean);
+        case _Escape:   return EnterMode(EscapeMode, Clean);
+        case _CapsLock: return EnterMode(CapsLockMode, Clean);
     }
 
     // No special behavior activated. Apply normalTypingMode keyboard behavior.
@@ -983,7 +1002,10 @@ void HandleLastKeyReleased() {
         case EscapeMode: // send Escape on release
             PressAndReleaseKey((RichKey){ 0, _Escape } );
             break;
-        case RightCtrlMode: // send RCtrl on release
+        case CapsLockMode: // send Escape on release
+            PressAndReleaseKey((RichKey){ 0, _Escape } );
+            break;
+        case RightCtrlMode: // send RCtrl on releasecase RightCtrlMode: // send RCtrl on release
             PressAndReleaseKey((RichKey){ RCtrl, 0 } );
             break;
         case LeftAltMode: // send Left Alt on release
