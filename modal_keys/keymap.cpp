@@ -612,7 +612,7 @@ ControlCode NumPad_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _N:                    return SendKeyCombo(LShift, _Semicolon, outbuf); // Colon
         case _M:                    return SendKey(_Numpad0, outbuf);
         case _Comma:                return SendKey(_Comma, outbuf);
-        case _Fullstop:             return SendKey(_Fullstop, outbuf);
+        case _Fullstop:             return SendKey(_NumpadDot, outbuf);
         case _ForwardSlash:         return SendKey(_NumpadDivide, outbuf);
         case _Space:                return SendKey(_Space, outbuf);
         case _Enter:                return SendKey(_Enter, outbuf);
