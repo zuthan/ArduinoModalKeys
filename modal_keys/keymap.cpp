@@ -344,7 +344,8 @@ ControlCode mapNormalKeyToCurrentLayout(uint8_t inbuf[8], uint8_t i, uint8_t out
         }
         // lookup key for current keyboard layout
         if (inkey >= _A && inkey <= _CapsLock){
-            uint8_t shiftOn = outbuf[0] & (LShift | RShift);
+            // todo use outbuf[1] to indicate whether a shift modifier is pressed
+            uint8_t shiftOn = outbuf[1] & (LShift | RShift);
             UnsetModifiers(LShift | RShift, outbuf);
             KeySpec keySpec = Keymap[CurrentLayout][inkey - _A];
             uint8_t mappedShift = shiftOn ? keySpec.shift2 : keySpec.shift1;
@@ -1090,12 +1091,18 @@ ControlCode ChangeConfiguration(KeyboardLayout layout, Mode entryPointMode) {
     return Stop;
 }
 
+ControlCode _sendKeyCombo(uint8_t mods, uint8_t keycode, uint8_t outbuf[8], bool realmods) {
+    CurrentModeState = Used;
+    MergeKeyIntoBuffer((RichKey){ mods, keycode }, outbuf, realmods);
+    return Continue;
+}
+
 ControlCode SendKey(uint8_t keycode, uint8_t outbuf[8]) {
-    return SendKeyCombo(0, keycode, outbuf);
+    return _sendKeyCombo(0, keycode, outbuf, false);
 }
 
 ControlCode SendModifiers(uint8_t mods, uint8_t outbuf[8]) {
-    return SendKeyCombo(mods, 0, outbuf);
+    return _sendKeyCombo(mods, 0, outbuf, true);
 }
 
 ControlCode UnsetModifiers(uint8_t mods, uint8_t outbuf[8]) {
@@ -1104,9 +1111,7 @@ ControlCode UnsetModifiers(uint8_t mods, uint8_t outbuf[8]) {
 }
 
 ControlCode SendKeyCombo(uint8_t mods, uint8_t keycode, uint8_t outbuf[8]) {
-    CurrentModeState = Used;
-    MergeKeyIntoBuffer((RichKey){ mods, keycode }, outbuf);
-    return Continue;
+    return _sendKeyCombo(mods, keycode, outbuf, false);
 }
 
 ControlCode SendOnlyKey(uint8_t keycode, uint8_t outbuf[8]) {
@@ -1115,13 +1120,13 @@ ControlCode SendOnlyKey(uint8_t keycode, uint8_t outbuf[8]) {
 
 ControlCode SendOnlyKeyCombo(uint8_t mods, uint8_t keycode, uint8_t outbuf[8]) {
     CurrentModeState = Used;
-    OverwriteBufferWithKey(outbuf, (RichKey){ mods, keycode });
+    OverwriteBufferWithKey(outbuf, (RichKey){ mods, keycode }, false);
     return Continue;
 }
 
 ControlCode SendRichKey(RichKey key, uint8_t outbuf[8]) {
     CurrentModeState = Used;
-    MergeKeyIntoBuffer(key, outbuf);
+    MergeKeyIntoBuffer(key, outbuf, true);
     return Continue;
 }
 
