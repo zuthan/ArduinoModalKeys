@@ -164,6 +164,7 @@ String KeyToString(uint8_t key) {
 String BufferToString(uint8_t buf[8]) {
     String out = "";
     out += ModifiersToString(buf[0]);
+    out += ModifiersToString(buf[1]);
     for (uint8_t i = 2; i < 8; i++) {
         out += (" " + KeyToString(buf[i]));
     }
