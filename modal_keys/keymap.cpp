@@ -488,7 +488,7 @@ ControlCode RightAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) 
         case _5:             return SendKey(_F5, outbuf);
         case _6:             return SendKey(_F6, outbuf);
         // left numpad
-        case _Q:             return SendKey(_Semicolon, outbuf);
+        case _Q:             return SendKeyCombo(RShift, _Semicolon, outbuf);
         case _W:             return SendKey(_1, outbuf);
         case _E:             return SendKey(_2, outbuf);
         case _R:             return SendKey(_3, outbuf);
