@@ -3,7 +3,7 @@
 #include "keymap.h"
 #include "helpers.h"
 #include "layout_qwerty.h"
-#include "layout_dvorak.h"
+//#include "layout_dvorak.h"
 #include "layout_dvorak_programmer.h"
 
 #include <EEPROM.h>
@@ -25,7 +25,7 @@ typedef enum {
 // Keyboard Layouts
 typedef enum {
     qwerty = 0,
-    dvorak,
+    // dvorak,
     dvorakProgrammer
 } KeyboardLayout;
 
@@ -152,7 +152,7 @@ const RichKey CustomModifierKey = { 0, 0, _CustomModifier };
 const KeySpec *Keymap[] =
 {
     qwertyKeymap,
-    dvorakKeymap,
+    //dvorakKeymap,
     dvorakProgrammerKeymap
 };
 
@@ -344,7 +344,6 @@ ControlCode mapNormalKeyToCurrentLayout(uint8_t inbuf[8], uint8_t i, uint8_t out
         }
         // lookup key for current keyboard layout
         if (inkey >= _A && inkey <= _CapsLock){
-            // todo use outbuf[1] to indicate whether a shift modifier is pressed
             uint8_t shiftOn = outbuf[1] & (LShift | RShift);
             UnsetModifiers(LShift | RShift, outbuf);
             KeySpec keySpec = Keymap[CurrentLayout][inkey - _A];
@@ -489,17 +488,23 @@ ControlCode RightAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) 
         case _5:             return SendKey(_F5, outbuf);
         case _6:             return SendKey(_F6, outbuf);
         // left numpad
-        case _Q:             return SendKey(_Equals, outbuf);
-        case _A:             return SendKey(_Dash, outbuf);
+        case _Q:             return SendKey(_Semicolon, outbuf);
         case _W:             return SendKey(_1, outbuf);
         case _E:             return SendKey(_2, outbuf);
         case _R:             return SendKey(_3, outbuf);
+        case _T:             return SendKey(_NumpadTimes, outbuf);
+
+        case _A:             return SendKey(_Backspace, outbuf);
         case _S:             return SendKey(_4, outbuf);
         case _D:             return SendKey(_5, outbuf);
         case _F:             return SendKey(_6, outbuf);
+        case _G:             return SendKey(_NumpadMinus, outbuf);
+
         case _Z:             return SendKey(_7, outbuf);
         case _X:             return SendKey(_8, outbuf);
         case _C:             return SendKey(_9, outbuf);
+        case _V:             return SendKey(_NumpadDivide, outbuf);
+        case _B:             return SendKey(_NumpadPlus, outbuf);
         case _Space:         return SendKey(_0, outbuf);
 
         // Right Hand keys
@@ -1191,7 +1196,7 @@ String GetModeStateString(ModeState modeState) {
 String GetLayoutString(KeyboardLayout layout) {
     switch (layout){
         case qwerty:    return "QY";
-        case dvorak:    return "DV";
+        // case dvorak:    return "DV";
         case dvorakProgrammer:   return "DVP";
     }
 }
