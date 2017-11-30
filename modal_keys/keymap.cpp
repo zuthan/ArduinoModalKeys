@@ -598,7 +598,7 @@ ControlCode WindowSnap_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
 
 ControlCode NumPad_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     // exit condition: first key pressed is no longer _X
-    if (inbuf[2] != _X)             return EnterMode(ModalNoKeysMode, Used);
+    if (inbuf[2] != _X)             return EnterMode(LeftAltMode, Used);
 
     // map modifier
     if (i == 0) switch (inbuf[i]) {
@@ -623,6 +623,7 @@ ControlCode NumPad_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
         case _P:                    return SendKey(_NumpadMinus, outbuf);
         case _LeftBracket:          return SendKey(_NumpadEnter, outbuf);
         case _RightBracket:         return SendKey(_NumLock, outbuf);
+        case _Backslash:            return SendKey(_NumLock, outbuf);
         case _H:                    return SendKey(_Backspace, outbuf);
         case _J:                    return SendKey(_Numpad1, outbuf);
         case _K:                    return SendKey(_Numpad2, outbuf);
