@@ -506,6 +506,10 @@ ControlCode RightAltMode_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) 
         case _V:             return SendKey(_NumpadDivide, outbuf);
         case _B:             return SendKey(_NumpadPlus, outbuf);
         case _Space:         return SendKey(_0, outbuf);
+        // right hand numpad helpers
+        case _Enter:         return SendKey(_Enter, outbuf);
+        case _Fullstop:      return SendKey(_Fullstop, outbuf);
+        case _Comma:         return SendKey(_Comma, outbuf);
 
         // Right Hand keys
         case _Backslash:     return EnterMode(AltTabMode, Used);
