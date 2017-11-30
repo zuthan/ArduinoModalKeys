@@ -3,8 +3,8 @@
 #include "keymap.h"
 #include "helpers.h"
 #include "layout_qwerty.h"
-//#include "layout_dvorak.h"
-#include "layout_dvorak_programmer.h"
+#include "layout_dvorak.h"
+// #include "layout_dvorak_programmer.h"
 
 #include <EEPROM.h>
 
@@ -25,8 +25,8 @@ typedef enum {
 // Keyboard Layouts
 typedef enum {
     qwerty = 0,
-    // dvorak,
-    dvorakProgrammer
+    dvorak,
+    // dvorakProgrammer
 } KeyboardLayout;
 
 // the available keyboard modes
@@ -142,7 +142,7 @@ ControlCode BlackDesertAlt_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]
 void HandleLastKeyReleased();
 
 // ****************************************************************************
-// Constants
+// Constantseeeeeeeeee
 // ****************************************************************************
 
 const RichKey NoKey = { 0, 0, 0 };
@@ -152,8 +152,8 @@ const RichKey CustomModifierKey = { 0, 0, _CustomModifier };
 const KeySpec *Keymap[] =
 {
     qwertyKeymap,
-    //dvorakKeymap,
-    dvorakProgrammerKeymap
+    dvorakKeymap,
+    // dvorakProgrammerKeymap
 };
 
 // array of KeyMapFuncs, one for each mode
@@ -190,7 +190,7 @@ const KeyMapFunc KeyMaps[] = {
 // Variables
 // ****************************************************************************
 
-KeyboardLayout CurrentLayout = dvorakProgrammer;
+KeyboardLayout CurrentLayout = dvorak;
 Mode EntryPointMode = ModalNoKeysMode;
 Mode CurrentMode = ModalNoKeysMode;
 OSMode CurrentOSMode = Windows;
@@ -255,7 +255,7 @@ ControlCode Escape_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
     if (i >= 2) switch (inbuf[i]) {
         case _Escape:    return Continue;
         case _F1:        return ChangeConfiguration(qwerty, NormalNoKeysMode);
-        case _F2:        return ChangeConfiguration(dvorakProgrammer, ModalNoKeysMode);
+        case _F2:        return ChangeConfiguration(dvorak, ModalNoKeysMode);
         case _F3:        return ChangeConfiguration(qwerty, GamingNoKeysMode);
         case _F4:        return ChangeConfiguration(qwerty, BlackDesertNoKeysMode);
     }
@@ -289,7 +289,7 @@ ControlCode RightCtrl_keymap(uint8_t inbuf[8], uint8_t i, uint8_t outbuf[8]) {
      // map first key
     if (i == 2) switch (inbuf[i]) {
         case _1:        return ChangeConfiguration(qwerty, NormalNoKeysMode);
-        case _2:        return ChangeConfiguration(dvorakProgrammer, ModalNoKeysMode);
+        case _2:        return ChangeConfiguration(dvorak, ModalNoKeysMode);
         case _3:        return ChangeConfiguration(qwerty, GamingNoKeysMode);
         case _4:        return ChangeConfiguration(qwerty, BlackDesertNoKeysMode);
     }
@@ -1196,8 +1196,8 @@ String GetModeStateString(ModeState modeState) {
 String GetLayoutString(KeyboardLayout layout) {
     switch (layout){
         case qwerty:    return "QY";
-        // case dvorak:    return "DV";
-        case dvorakProgrammer:   return "DVP";
+        case dvorak:    return "DV";
+        // case dvorakProgrammer:   return "DVP";
     }
 }
 
